@@ -1,0 +1,121 @@
+// SoloCoach AI - SQLite schema
+// JSON-shaped payloads are stored as TEXT (JSON.stringify) to stay portable
+// across every Prisma/SQLite version. They are parsed back by src/lib/json.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id         String   @id @default(cuid())
+  parentName String
+  contact    String
+  childAge   Int?
+  goal       String?
+  location   String?
+  status     String   @default("new") // new | consulting | quoted | booked | closed
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  messages  Message[]
+  plans     TrainingPlan[]
+  quotes    Quote[]
+  bookings  Booking[]
+  agentRuns AgentRun[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  role      String // parent | assistant | system | draft
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+}
+
+model TrainingPlan {
+  id         String   @id @default(cuid())
+  leadId     String
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  age        Int
+  goal       String
+  experience String
+  weeksJson  String // 4-week plan as JSON text
+  disclaimer String
+  createdAt  DateTime @default(now())
+
+  @@index([leadId])
+}
+
+model Quote {
+  id         String      @id @default(cuid())
+  leadId     String
+  lead       Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  currency   String      @default("CNY")
+  totalCents Int
+  note       String
+  createdAt  DateTime    @default(now())
+  items      QuoteItem[]
+
+  @@index([leadId])
+}
+
+model QuoteItem {
+  id             String @id @default(cuid())
+  quoteId        String
+  quote          Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  name           String
+  quantity       Int
+  unitPriceCents Int
+  amountCents    Int
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  startAt   DateTime
+  endAt     DateTime
+  status    String   @default("pending") // pending | confirmed | cancelled
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+}
+
+model AgentRun {
+  id           String        @id @default(cuid())
+  leadId       String
+  lead         Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  inputMessage String
+  status       String // completed | needs_input | failed
+  summary      String
+  durationMs   Int
+  createdAt    DateTime      @default(now())
+  actions      AgentAction[]
+
+  @@index([leadId])
+}
+
+model AgentAction {
+  id         String   @id @default(cuid())
+  runId      String
+  run        AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  step       String
+  name       String
+  status     String // success | skipped | failed | awaiting_confirmation
+  durationMs Int
+  inputJson  String
+  outputJson String
+  log        String
+  createdAt  DateTime @default(now())
+
+  @@index([runId])
+}

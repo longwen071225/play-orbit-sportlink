@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SportLink AI 运动陪练</title>
+<link rel="stylesheet" href="/static/swagger-ui/swagger-ui.css">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Microsoft YaHei", system-ui, sans-serif; background: #0e1420; color: #e8eef7; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 8px 0 4px; }
+  .sub { color: #8fa3bd; font-size: 13px; margin-bottom: 14px; }
+  .card { background: #16203480; border: 1px solid #2a3a55; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  label { font-size: 13px; color: #9db2cc; }
+  input, select, button { background: #1d2a42; color: #e8eef7; border: 1px solid #34507a; border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+  button { cursor: pointer; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: #2f6fed; border-color: #2f6fed; font-weight: 600; }
+  button.warn { background: #b3423f; border-color: #b3423f; }
+  button.ok { background: #1f8a5b; border-color: #1f8a5b; font-weight: 600; }
+  .stage { position: relative; width: 100%; max-width: 640px; aspect-ratio: 4/3; background: #000; border-radius: 12px; overflow: hidden; }
+  .stage video, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
+  .hud .chip { background: #0e1420cc; border: 1px solid #34507a; border-radius: 8px; padding: 6px 10px; font-size: 14px; }
+  .feedback { position: absolute; left: 10px; right: 10px; bottom: 10px; background: #0e1420d9; border: 1px solid #34507a; border-radius: 8px; padding: 8px 12px; font-size: 15px; min-height: 20px; }
+  .meter { height: 10px; background: #1d2a42; border-radius: 6px; overflow: hidden; margin: 8px 0; }
+  .meter > div { height: 100%; background: linear-gradient(90deg,#2f6fed,#1f8a5b); width: 0%; transition: width .3s; }
+  .muted { color: #8fa3bd; font-size: 12px; }
+  .warnbox { border-color: #b3423f; }
+  .star { font-size: 26px; }
+  .hidden { display: none; }
+  code { background: #0e1420; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏃 SportLink AI 运动陪练</h1>
+  <div class="sub">姿态识别在你的浏览器本地运行；只上传结构化事件（次数/错误/状态），<b>不保存、不上传任何视频、照片或关键点序列</b>。所有阈值为演示用调参值，不构成医学标准。</div>
+
+  <div class="card" id="loginCard">
+    <div class="row">
+      <label>手机号 <input id="phone" value="13800000001" size="13"></label>
+      <label>密码 <input id="password" type="password" value="demo123456" size="12"></label>
+      <button class="primary" id="loginBtn">登录</button>
+      <span id="loginState" class="muted"></span>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label>儿童 <select id="childSel" disabled></select></label>
+      <span id="taskInfo" class="muted"></span>
+    </div>
+  </div>
+
+  <div class="card" id="trainCard">
+    <div class="row">
+      <label>动作 <select id="exSel" disabled></select></label>
+      <button id="camBtn" class="primary" disabled>📷 开启摄像头</button>
+      <button id="startBtn" class="ok" disabled>开始训练</button>
+      <button id="pauseBtn" disabled>暂停</button>
+      <button id="completeBtn" class="warn" disabled>完成训练</button>
+      <label><input type="checkbox" id="voiceToggle" checked> 🔊 语音提醒</label>
+    </div>
+    <div class="stage">
+      <video id="video" playsinline muted></video>
+      <canvas id="overlay"></canvas>
+      <div class="hud">
+        <div class="chip" id="hudAction">选择动作并开启摄像头</div>
+        <div class="chip" id="hudCount">0 / 0</div>
+      </div>
+      <div class="feedback" id="feedback">登录后选择动作，开启摄像头即可开始。</div>
+    </div>
+    <div class="meter"><div id="progressBar"></div></div>
+    <div class="muted" id="poseState"></div>
+  </div>
+
+  <div class="card" id="guidedCard">
+    <b>不开摄像头？模式 B：智能训练提醒</b>
+    <div class="row" style="margin-top:8px">
+      <button id="guideBtn">问教练：现在做什么？</button>
+      <button id="guideDoneBtn">这个动作做完了</button>
+      <span class="muted">页面打开期间实时提醒；完成标准仍需摄像头训练达标后发放陪练星。</span>
+    </div>
+    <div id="guideText" style="margin-top:10px;font-size:15px;line-height:1.7"></div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <h2 style="margin:4px 0">训练结果</h2>
+    <div id="resultBody"></div>
+    <div class="muted" id="resultDisclaimer"></div>
+  </div>
+</div>
+
+<script src="/static/pose/pose.js"></script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const API = "";
+
+let token = sessionStorage.getItem("sl_token") || "";
+let children = [];
+let currentChild = "";
+let exercises = [];
+let config = null;          // motionConfig from backend (single source of truth)
+let session = null;         // active training session
+let pose = null, cameraRunning = false, training = false, paused = false;
+let engine = null;
+let lastSent = 0, batch = [];
+let lastVoiceTs = {};       // code -> ts
+let lastFeedbackText = "";
+
+// ---------------- API helpers ----------------
+async function api(method, path, body) {
+  const res = await fetch(API + path, {
+    method,
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json.success === false) throw new Error(json?.error?.message || ("HTTP " + res.status));
+  return json.data;
+}
+
+// ---------------- voice ----------------
+function speak(text, code) {
+  if (!$("voiceToggle").checked || !text) return;
+  const now = Date.now();
+  const cooldown = ((config && config.voiceCooldownSeconds) || 4) * 1000;
+  const key = code || text;
+  if (now - (lastVoiceTs[key] || 0) < cooldown) return;
+  lastVoiceTs[key] = now;
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "zh-CN"; u.rate = 1.05;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) { /* voice is best-effort */ }
+}
+
+function feedback(text, code, persist) {
+  if (text === lastFeedbackText && !persist) return;
+  lastFeedbackText = text;
+  $("feedback").textContent = text;
+  if (text) speak(text, code);
+}
+
+// ---------------- login / bootstrap ----------------
+$("loginBtn").onclick = async () => {
+  $("loginState").textContent = "登录中…";
+  try {
+    const data = await api("POST", "/api/auth/login", { phone: $("phone").value.trim(), password: $("password").value });
+    token = data.token; sessionStorage.setItem("sl_token", token);
+    $("loginState").textContent = "已登录：" + (data.user?.name || data.user?.role);
+    await bootstrap();
+  } catch (e) { $("loginState").textContent = "登录失败：" + e.message; }
+};
+
+async function bootstrap() {
+  children = (await api("GET", "/api/children")).items;
+  const sel = $("childSel"); sel.innerHTML = ""; sel.disabled = false;
+  children.forEach((c) => {
+    const o = document.createElement("option"); o.value = c.id; o.textContent = c.nickname + "（" + c.age + " 岁）";
+    sel.appendChild(o);
+  });
+  currentChild = children[0]?.id || "";
+  sel.onchange = () => { currentChild = sel.value; loadTask(); };
+  exercises = (await api("GET", "/api/training/exercises")).items;
+  const ex = $("exSel"); ex.innerHTML = ""; ex.disabled = false;
+  exercises.forEach((e) => {
+    const o = document.createElement("option"); o.value = e.exerciseId;
+    o.textContent = e.name + "（" + (e.motionConfig.kind === "HOLD" ? e.motionConfig.targetSeconds + " 秒" : e.motionConfig.targetReps + " 次") + "）";
+    ex.appendChild(o);
+  });
+  ex.onchange = () => pickExercise(ex.value);
+  $("camBtn").disabled = false;
+  if (exercises.length) pickExercise(exercises[0].exerciseId);
+  loadTask();
+}
+
+async function loadTask() {
+  if (!currentChild) return;
+  try {
+    const tasks = (await api("GET", "/api/tasks?childId=" + currentChild)).items.filter((t) => t.status === "OPEN");
+    const t = tasks[0];
+    $("taskInfo").textContent = t ? "教练任务：「" + t.title + "」(" + t.items.length + " 个动作)" : "暂无教练任务，可自由练习";
+    window._openTask = t || null;
+  } catch (e) { $("taskInfo").textContent = ""; }
+}
+
+function pickExercise(exerciseId) {
+  const row = exercises.find((e) => e.exerciseId === exerciseId);
+  config = row ? row.motionConfig : null;
+  engine = config ? new MotionEngine(config) : null;
+  updateHud(0);
+  $("hudAction").textContent = config ? config.name + "（" + (config.kind === "HOLD" ? "保持 " + config.targetSeconds + " 秒" : "目标 " + config.targetReps + " 次") + "）" : "选择动作";
+  feedback(config ? "准备就绪。点击「开始训练」，让全身出现在画面里。" : "");
+}
+
+// ---------------- local rule engine (mirrors backend pose.py, config-driven) ----------------
+const LM = { NOSE: 0, L_SHOULDER: 11, R_SHOULDER: 12, L_WRIST: 15, R_WRIST: 16, L_HIP: 23, R_HIP: 24, L_KNEE: 25, R_KNEE: 26, L_ANKLE: 27, R_ANKLE: 28 };
+const CONNECTIONS = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+
+function angleAt(a, b, c) { // angle at b in degrees
+  const v1 = [a.x - b.x, a.y - b.y], v2 = [c.x - b.x, c.y - b.y];
+  const dot = v1[0]*v2[0] + v1[1]*v2[1];
+  const m = Math.hypot(v1[0], v1[1]) * Math.hypot(v2[0], v2[1]);
+  if (!m) return null;
+  return Math.acos(Math.max(-1, Math.min(1, dot / m))) * 180 / Math.PI;
+}
+const vis = (p) => (p && p.visibility !== undefined ? p.visibility : 1);
+
+class MotionEngine {
+  constructor(cfg) {
+    this.cfg = cfg;
+    this.inRep = false; this.repStart = 0; this.repStats = null;
+    this.isOpen = false; this.holdStartHipX = null;
+    this.holdMsSent = 0; this.holdAccumStart = null;
+    this.lostFrames = 0; this.poseLost = false;
+    this.localRepCount = 0; this.localErrorTs = {};
+  }
+  metrics(lm) {
+    const need = [LM.L_HIP, LM.R_HIP, LM.L_KNEE, LM.R_KNEE, LM.L_ANKLE, LM.R_ANKLE, LM.L_SHOULDER, LM.R_SHOULDER];
+    const okVis = need.every((i) => vis(lm[i]) >= 0.5);
+    if (!okVis) return null;
+    const sw = Math.hypot(lm[LM.L_SHOULDER].x - lm[LM.R_SHOULDER].x, lm[LM.L_SHOULDER].y - lm[LM.R_SHOULDER].y) || 0.1;
+    const kneeL = angleAt(lm[LM.L_HIP], lm[LM.L_KNEE], lm[LM.L_ANKLE]);
+    const kneeR = angleAt(lm[LM.R_HIP], lm[LM.R_KNEE], lm[LM.R_ANKLE]);
+    const knees = [kneeL, kneeR].filter((v) => v !== null);
+    const kneeAngle = knees.length ? knees.reduce((a, b) => a + b) / knees.length : null;
+    const midS = { x: (lm[LM.L_SHOULDER].x + lm[LM.R_SHOULDER].x) / 2, y: (lm[LM.L_SHOULDER].y + lm[LM.R_SHOULDER].y) / 2 };
+    const midH = { x: (lm[LM.L_HIP].x + lm[LM.R_HIP].x) / 2, y: (lm[LM.L_HIP].y + lm[LM.R_HIP].y) / 2 };
+    const midK = { x: (lm[LM.L_KNEE].x + lm[LM.R_KNEE].x) / 2, y: (lm[LM.L_KNEE].y + lm[LM.R_KNEE].y) / 2 };
+    const hipAngle = angleAt(midS, midH, midK);
+    const armsOpen = vis(lm[LM.NOSE]) >= 0.5 && lm[LM.L_WRIST].y < lm[LM.NOSE].y && lm[LM.R_WRIST].y < lm[LM.NOSE].y;
+    const legsApart = Math.abs(lm[LM.L_ANKLE].x - lm[LM.R_ANKLE].x) / sw >= 1.35;
+    const liftL = lm[LM.R_ANKLE].y - lm[LM.L_ANKLE].y;   // >0 => left foot lifted
+    const lifted = Math.abs(liftL) > 0.05;
+    const supportKnee = liftL > 0 ? angleAt(lm[LM.R_HIP], lm[LM.R_KNEE], lm[LM.R_ANKLE]) : angleAt(lm[LM.L_HIP], lm[LM.L_KNEE], lm[LM.L_ANKLE]);
+    const m = {
+      kneeAngle, trunkLeanAngle: hipAngle !== null ? 180 - hipAngle : null,
+      armsOpen: armsOpen ? 1 : 0, legsApart: legsApart ? 1 : 0,
+      isOpen: armsOpen && legsApart ? 1 : 0,
+      isHolding: lifted ? 1 : 0, supportKneeAngle: supportKnee,
+      hipShift: this.holdStartHipX !== null ? Math.abs(midH.x - this.holdStartHipX) / sw : 0,
+    };
+    m._midH = midH; m._sw = sw; m._liftL = liftL;
+    return m;
+  }
+  frameErrorEvents(metrics, now) {
+    const out = [];
+    for (const rule of this.cfg.errorRules) {
+      if (rule.scope !== "frame") continue;
+      const v = metrics[rule.check.metric];
+      if (v === null || v === undefined) continue;
+      const violated = rule.check.op === "above" ? Number(v) > rule.check.value : Number(v) < rule.check.value;
+      if (violated && now - (this.localErrorTs[rule.code] || 0) > 2500) {
+        this.localErrorTs[rule.code] = now;
+        out.push({ type: "FORM_ERROR", code: rule.code, confidence: 0.9, metrics: { [rule.check.metric]: v } });
+      }
+    }
+    return out;
+  }
+  repErrorEvents(repStats) {
+    const out = [];
+    for (const rule of this.cfg.errorRules) {
+      if (rule.scope !== "rep") continue;
+      const v = repStats[rule.check.metric];
+      if (v === null || v === undefined) continue;
+      const violated = rule.check.op === "above" ? Number(v) > rule.check.value : Number(v) < rule.check.value;
+      if (violated) out.push({ type: "FORM_ERROR", code: rule.code, confidence: 0.9, metrics: { [rule.check.metric]: v } });
+    }
+    return out;
+  }
+  onFrame(lm, now) {
+    const events = [], msgs = [];
+    const confidence = Math.min(...[LM.NOSE, LM.L_SHOULDER, LM.R_SHOULDER, LM.L_HIP, LM.R_HIP].map((i) => vis(lm[i])));
+    if (confidence < 0.45) {
+      this.lostFrames++;
+      if (!this.poseLost && this.lostFrames > 15) {
+        this.poseLost = true;
+        events.push({ type: "POSE_LOST", confidence });
+        msgs.push("看不清你的动作啦，退后一点让全身入镜，光线亮一些。");
+      }
+      return { events, msgs, metrics: null };
+    }
+    if (this.poseLost) { this.poseLost = false; msgs.push("找到了！继续保持。"); }
+    this.lostFrames = 0;
+    const metrics = this.metrics(lm);
+    if (!metrics) return { events, msgs, metrics: null };
+    const kind = this.cfg.kind;
+
+    if (kind === "REPS") {
+      const rule = this.cfg.repRule;
+      if (rule.type === "ANGLE_HYSTERESIS") {
+        const k = metrics[rule.metric];
+        if (!this.inRep && k < rule.enterBelow) { this.inRep = true; this.repStart = now; this.repStats = { minKneeAngleInRep: k, repDurationMs: 0 }; }
+        else if (this.inRep) { this.repStats["minKneeAngleInRep"] = Math.min(this.repStats["minKneeAngleInRep"], k); }
+        if (this.inRep && k > rule.exitAbove) {
+          this.inRep = false;
+          this.repStats.repDurationMs = now - this.repStart;
+          this.localRepCount++;
+          events.push({ type: "REP", confidence, metrics: { minKneeAngleInRep: this.repStats["minKneeAngleInRep"], repDurationMs: this.repStats.repDurationMs } });
+          msgs.push("好，" + this.localRepCount + " 个！");
+          events.push(...this.repErrorEvents(this.repStats));
+        }
+      } else if (rule.type === "BOOLEAN") {
+        const open = !!metrics[rule.metric];
+        if (this.inRep && !open) {
+          this.inRep = false; this.localRepCount++;
+          events.push({ type: "REP", confidence, metrics: { minKneeAngleInRep: metrics.kneeAngle } });
+          msgs.push("好，" + this.localRepCount + " 个！");
+          events.push(...this.repErrorEvents({ minKneeAngleInRep: metrics.kneeAngle, repDurationMs: now - this.repStart }));
+        } else if (!this.inRep && open) { this.inRep = true; this.repStart = now; }
+      }
+    } else if (kind === "HOLD") {
+      if (metrics.isHolding) {
+        if (this.holdAccumStart === null) { this.holdAccumStart = now; this.holdStartHipX = metrics._midH.x; }
+        const held = now - this.holdAccumStart;
+        if (held - this.holdMsSent >= 1000) {
+          events.push({ type: "HOLD", holdMs: held - this.holdMsSent, confidence });
+          this.holdMsSent = held;
+        }
+      } else if (this.holdAccumStart !== null) {
+        this.holdAccumStart = null; msgs.push("脚放下啦，抬起来继续坚持！");
+      }
+    }
+    events.push(...this.frameErrorEvents(metrics, now));
+    return { events, msgs, metrics };
+  }
+}
+
+// ---------------- camera + loop ----------------
+$("camBtn").onclick = async () => {
+  if (cameraRunning) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" }, audio: false });
+    $("video").srcObject = stream; await $("video").play();
+    cameraRunning = true;
+    $("startBtn").disabled = false;
+    feedback("摄像头已开启（仅本地处理）。选择动作后点「开始训练」。", null, true);
+    initPose();
+  } catch (e) {
+    feedback("无法开启摄像头：" + e.message + "。可以不用摄像头，用下方「模式 B」跟随教练提醒训练。", null, true);
+    $("poseState").textContent = "摄像头不可用 —— 已降级为模式 B（无摄像头训练提醒）。";
+  }
+};
+
+function initPose() {
+  pose = new Pose({
+    locateFile: (f) => "/static/pose/" + f,
+    modelComplexity: 0, smoothLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5,
+  });
+  pose.onResults(onResults);
+  const step = async () => {
+    if (!cameraRunning) return;
+    if (training && !paused && $("video").readyState >= 2) {
+      try { await pose.send({ image: $("video") }); } catch (e) { /* skip frame */ }
+    }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function onResults(results) {
+  const canvas = $("overlay");
+  canvas.width = $("video").videoWidth || 640; canvas.height = $("video").videoHeight || 480;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const lm = results.poseLandmarks;
+  if (!lm) {
+    // No person at all: degrade honestly instead of guessing.
+    if (engine && training && !paused) {
+      if (!engine._noPersonFrames) engine._noPersonFrames = 0;
+      if (++engine._noPersonFrames > 15 && !engine._noPersonAnnounced) {
+        engine._noPersonAnnounced = true;
+        feedback("画面里没有找到人。请退后一点，让全身出现在画面里。", "NO_PERSON", true);
+        batch.push({ type: "POSE_LOST", confidence: 0 });
+        flushBatch(false);
+      }
+    }
+    return;
+  }
+  if (engine) engine._noPersonFrames = 0, engine._noPersonAnnounced = false;
+  if (!engine || !training || paused) return;
+  // skeleton
+  ctx.strokeStyle = "#37e0a0"; ctx.lineWidth = 3;
+  for (const [a, b] of CONNECTIONS) {
+    if (vis(lm[a]) < 0.5 || vis(lm[b]) < 0.5) continue;
+    ctx.beginPath(); ctx.moveTo(lm[a].x * canvas.width, lm[a].y * canvas.height);
+    ctx.lineTo(lm[b].x * canvas.width, lm[b].y * canvas.height); ctx.stroke();
+  }
+  ctx.fillStyle = "#ffd166";
+  for (const p of lm) if (vis(p) >= 0.5) { ctx.beginPath(); ctx.arc(p.x * canvas.width, p.y * canvas.height, 4, 0, 7); ctx.fill(); }
+
+  const now = performance.now();
+  const out = engine.onFrame(lm, now);
+  if (out.msgs.length) feedback(out.msgs[out.msgs.length - 1]);
+  if (out.events) batch.push(...out.events);
+  if (out.metrics && config.kind === "HOLD") {
+    const held = (out.metrics.isHolding && engine.holdAccumStart !== null) ? (now - engine.holdAccumStart + engine.holdMsSent) / 1000 : null;
+    $("hudCount").textContent = held !== null ? held.toFixed(0) + " / " + config.targetSeconds + " 秒" : "抬起一只脚！";
+  }
+  flushBatch(false);
+}
+
+async function flushBatch(force) {
+  if (!session) return;
+  const now = Date.now();
+  if (!batch.length) return;
+  if (!force && now - lastSent < 1500 && batch.length < 10) return;
+  const events = batch.splice(0, 50);
+  lastSent = now;
+  try {
+    const data = await api("POST", "/api/training/sessions/" + session.id + "/feedback", { events });
+    updateHud(data.progressRatio, data.counters);
+    if (data.rejected?.length && data.rejected[0].reason === "LOW_CONFIDENCE") {
+      feedback("这个动作没看清楚，慢一点、正对镜头再试一次。");
+    }
+    const errs = data.counters.errorCounts || {};
+    const lastErr = Object.keys(errs).pop();
+    if (lastErr) {
+      const rule = config.errorRules.find((r) => r.code === lastErr);
+      if (rule) feedback(rule.message, lastErr);
+    }
+  } catch (e) { /* transient network issue; keep training */ }
+}
+
+function updateHud(progress, counters) {
+  if (counters) {
+    $("hudCount").textContent = config.kind === "HOLD"
+      ? counters.holdSeconds.toFixed(0) + " / " + (counters.targetSeconds ?? config.targetSeconds) + " 秒"
+      : counters.validRepCount + " / " + (counters.targetReps ?? config.targetReps);
+  }
+  $("progressBar").style.width = Math.round((progress ?? 0) * 100) + "%";
+}
+
+// ---------------- training control ----------------
+$("startBtn").onclick = async () => {
+  if (!config) return;
+  try {
+    session = await api("POST", "/api/training/sessions", {
+      childId: currentChild, exerciseId: config.exerciseId,
+      ...(window._openTask ? { taskId: window._openTask.id } : {}),
+    });
+    training = true; paused = false;
+    engine = new MotionEngine(config);
+    batch = [];
+    $("pauseBtn").disabled = false; $("completeBtn").disabled = false; $("startBtn").disabled = true;
+    $("resultCard").classList.add("hidden");
+    feedback(session.mode === "POSE" ? "开始！" + (config.tips?.[0] || "") : "开始，跟着提醒做。", null, true);
+    speak("开始！" + (config.tips?.[0] || ""), "start");
+  } catch (e) { feedback("创建训练会话失败：" + e.message, null, true); }
+};
+
+$("pauseBtn").onclick = () => {
+  paused = !paused;
+  $("pauseBtn").textContent = paused ? "继续" : "暂停";
+  feedback(paused ? "已暂停，休息一下。" : "继续！", "pause", true);
+};
+
+$("completeBtn").onclick = async () => {
+  if (!session) return;
+  training = false;
+  try {
+    await flushBatch(true);
+    const data = await api("POST", "/api/training/sessions/" + session.id + "/complete", {});
+    showResult(data);
+  } catch (e) {
+    $("resultCard").classList.remove("hidden");
+    $("resultBody").innerHTML = "<span class='warnbox'>" + e.message + "</span>";
+    training = true;
+  }
+};
+
+function showResult(data) {
+  const r = data.result;
+  const stars = data.starsAwarded || [];
+  $("resultCard").classList.remove("hidden");
+  $("resultBody").innerHTML =
+    (r.completed ? "<span class='star'>🎉 达标！</span>" : "<span class='star'>💪 再接再厉！</span>") +
+    "<br>有效次数：" + r.validRepCount + " ｜ 保持：" + r.holdSeconds + " 秒 ｜ 时长：" + r.durationSeconds + " 秒" +
+    "<br>常见错误：" + (Object.keys(r.errorCounts || {}).length ? JSON.stringify(r.errorCounts) : "无") +
+    (stars.length ? "<br>" + stars.map((s) => "⭐ " + s.title + "（" + s.description + "）").join("<br>") : "");
+  $("resultDisclaimer").textContent = data.result.summary || "";
+  $("startBtn").disabled = false; $("pauseBtn").disabled = true; $("completeBtn").disabled = true;
+  if (stars.length) speak("太棒了！获得" + stars[0].title + "！", "star");
+}
+
+// ---------------- Mode B (no camera) ----------------
+let motionSessionId = sessionStorage.getItem("sl_motion_session") || "";
+async function guide(message) {
+  try {
+    const data = await api("POST", "/api/agent/motion-coach/chat", {
+      message, childId: currentChild || undefined, sessionId: motionSessionId || undefined,
+      ...(window._openTask ? { taskId: window._openTask.id } : {}),
+    });
+    motionSessionId = data.sessionId; sessionStorage.setItem("sl_motion_session", motionSessionId);
+    $("guideText").textContent = data.reply;
+    speak(data.reply, "guide");
+  } catch (e) { $("guideText").textContent = "陪练助手暂时不可用：" + e.message; }
+}
+$("guideBtn").onclick = () => guide("现在该做什么？");
+$("guideDoneBtn").onclick = () => guide("做完了");
+
+// auto-resume with saved token
+if (token) {
+  $("loginState").textContent = "使用已保存的登录…";
+  api("GET", "/api/auth/me").then(() => bootstrap()).catch(() => { token = ""; $("loginState").textContent = "登录已过期，请重新登录"; });
+}
+</script>
+</body>
+</html>

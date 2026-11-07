@@ -1,0 +1,52 @@
+.flex-carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: contain;
+  outline: none;
+}
+.flex-carousel:active { cursor: grabbing; }
+.flex-carousel:focus-visible { box-shadow: inset 0 0 0 2px #9cbf5e88; border-radius: 8px; }
+.flex-carousel canvas { display: block; }
+.flex-carousel__caption {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  pointer-events: none;
+  text-align: center;
+  animation: fc-reveal 0.9s ease both;
+}
+.flex-carousel__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #2f3d23;
+  animation: fc-title 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.flex-carousel__subtitle { font-weight: 400; opacity: 0.6; font-size: 12px; }
+.flex-carousel__count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+  opacity: 0.5;
+  color: #57703b;
+}
+@keyframes fc-title { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes fc-reveal { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .flex-carousel__caption, .flex-carousel__title { animation: none; }
+}

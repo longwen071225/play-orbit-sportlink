@@ -1,0 +1,1231 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SoloCoach AI Backend",
+    "version": "1.0.0",
+    "description": "面向独立儿童体育教练的一人公司 AI 员工系统后端。所有 /api/* 响应统一为 {success,data,error,requestId}。金额由后端确定性计算；预约与外部发送必须人工确认。"
+  },
+  "components": {
+    "schemas": {}
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "健康检查：运行模式、模型与当前价目表",
+        "tags": [
+          "system"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/leads": {
+      "post": {
+        "summary": "创建咨询客户",
+        "tags": [
+          "A. 客户管理"
+        ],
+        "description": "字段：parentName, contact, childAge?, goal?, location?, status?",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "parentName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "contact": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "childAge": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 18
+                  },
+                  "goal": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "location": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "new",
+                      "consulting",
+                      "quoted",
+                      "booked",
+                      "closed"
+                    ]
+                  }
+                },
+                "required": [
+                  "parentName",
+                  "contact"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "获取客户列表",
+        "tags": [
+          "A. 客户管理"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "consulting",
+                "quoted",
+                "booked",
+                "closed"
+              ]
+            },
+            "in": "query",
+            "name": "status",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/leads/{id}": {
+      "get": {
+        "summary": "查看客户详情与咨询记录",
+        "tags": [
+          "A. 客户管理"
+        ],
+        "description": "返回客户资料、全部 Message、课程方案、报价、预约与 AgentRun 记录",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/leads/{id}/messages": {
+      "post": {
+        "summary": "保存家长消息",
+        "tags": [
+          "A. 客户管理"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "parent",
+                      "assistant",
+                      "system"
+                    ],
+                    "default": "parent"
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "summary": "创建待确认预约（检查时间冲突）",
+        "tags": [
+          "E. 预约管理"
+        ],
+        "description": "预约始终以 pending 创建，重叠时段返回 409 BOOKING_CONFLICT",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "startAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "endAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "leadId",
+                  "startAt",
+                  "endAt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "获取预约列表",
+        "tags": [
+          "E. 预约管理"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed",
+                "cancelled"
+              ]
+            },
+            "in": "query",
+            "name": "status",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "leadId",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/confirm": {
+      "patch": {
+        "summary": "确认预约（唯一能把状态改为 confirmed 的入口）",
+        "tags": [
+          "E. 预约管理"
+        ],
+        "description": "仅 pending -> confirmed；需人工/用户显式调用，AI 总控不会自动调用",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/sales": {
+      "post": {
+        "summary": "抽取咨询信息 / 补全缺失字段 / 生成回复",
+        "tags": [
+          "B. AI 销售员工"
+        ],
+        "description": "返回 extractedFields, missingFields, suggestedReply, recommendedService；对话与抽取结果写入 Message 表",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "leadId",
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/coach": {
+      "post": {
+        "summary": "生成四周课程计划并入库",
+        "tags": [
+          "C. AI 课程员工"
+        ],
+        "description": "每周包含 theme/warmup/mainTraining/game/cooldown/homework；仅一般体育活动建议",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "childAge": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 18
+                  },
+                  "goal": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  },
+                  "experience": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                },
+                "required": [
+                  "leadId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/quote": {
+      "post": {
+        "summary": "生成套餐推荐与报价（金额后端确定性计算）",
+        "tags": [
+          "D. AI 商务员工"
+        ],
+        "description": "LLM 只决定套餐类型与数量；金额来自可配置价目表，写入 Quote + QuoteItem",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "preferredSessions": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  }
+                },
+                "required": [
+                  "leadId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/followup": {
+      "post": {
+        "summary": "生成跟进话术草稿（不自动发送）",
+        "tags": [
+          "F. AI 跟进员工"
+        ],
+        "description": "仅保存为 draft 消息，sent=false，需要人工确认后才可发送",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "channel": {
+                    "type": "string",
+                    "enum": [
+                      "wechat",
+                      "sms",
+                      "phone",
+                      "in_app"
+                    ]
+                  }
+                },
+                "required": [
+                  "leadId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/run": {
+      "post": {
+        "summary": "编排完整链路：识别需求 -> 询问/课程 -> 报价 -> 跟进 -> 下一步建议",
+        "tags": [
+          "G. AI 总控员工"
+        ],
+        "description": "逐步真实调用各业务模块并落库；返回每步 status/result/durationMs/log 与结构化 nextStep 下一步建议；预约与外部发送停在人工确认门禁",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "leadId",
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "true on success, false on error"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "description": "Payload on success; null on error"
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Machine readable error code"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Human readable message"
+                        },
+                        "details": {
+                          "description": "Optional structured details"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true,
+                      "description": "Error body on failure; null on success"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "description": "Unique id for this request (also x-request-id header)"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "error",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "本地服务"
+    }
+  ],
+  "tags": [
+    {
+      "name": "system",
+      "description": "健康检查"
+    },
+    {
+      "name": "A. 客户管理",
+      "description": "Lead / Message"
+    },
+    {
+      "name": "B. AI 销售员工",
+      "description": "信息抽取与追问"
+    },
+    {
+      "name": "C. AI 课程员工",
+      "description": "四周课程方案"
+    },
+    {
+      "name": "D. AI 商务员工",
+      "description": "套餐推荐与报价"
+    },
+    {
+      "name": "E. 预约管理",
+      "description": "待确认预约与确认"
+    },
+    {
+      "name": "F. AI 跟进员工",
+      "description": "跟进话术草稿"
+    },
+    {
+      "name": "G. AI 总控员工",
+      "description": "多步编排与执行日志"
+    }
+  ]
+}

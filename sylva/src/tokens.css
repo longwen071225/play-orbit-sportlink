@@ -1,0 +1,62 @@
+/* DESIGN.md v2.1 — Fresh white / sage / warm yellow. Desktop Web. */
+:root {
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --ink: #26321c;
+  --muted: #737d69;
+  --line: #e1e6d9;
+  --control-line: #9ca98e;
+  --court: #4f6b2b;
+  --court-soft: #f0f5e7;
+  --energy: #9cbf5e;
+  --universe: #080e0b;
+  --universe-panel: #111b14;
+  --on-dark: #f4f7ef;
+  --muted-dark: #bac8b2;
+  --star: #b5d66e;
+  --orbit: #9fc9ba;
+  --success: #4f7838;
+  --warning: #966814;
+  --error: #b64949;
+  --acid: #779b3e;
+  --pink: #c7b4c9;
+  --cyan: #9fc9ba;
+  --fresh-yellow: #ffc600;
+  --brand-ink: #232a08;
+  --hero-cta-ink: #313e0c;
+  --header-muted: #8c8c87;
+  --header-star-muted: #dedede;
+  --chrome: linear-gradient(
+    168deg,
+    #ffffff 0%,
+    #eef2e9 17%,
+    #bdc5b7 32%,
+    #f5f8f0 48%,
+    #ffffff 53%,
+    #aab4a2 63%,
+    #f2f6ed 78%,
+    #ffffff 100%
+  );
+  --chrome-text: linear-gradient(
+    165deg,
+    #e6ebe1 0%,
+    #b6c1ae 20%,
+    #687860 36%,
+    #d7dfd0 49%,
+    #f3f7ee 53%,
+    #88967f 66%,
+    #c3cebb 82%,
+    #e8eee3 100%
+  );
+  --display:
+    "Syne", "Arial Black", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --serif: var(--display);
+  --sans: "Space Grotesk", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "SFMono-Regular", Consolas, monospace;
+  --font-body: 16px;
+  --font-small: 14px;
+  --font-meta: 12px;
+  --space-unit: 4px;
+  --radius: 6px;
+  --ease: cubic-bezier(0.19, 1, 0.22, 1);
+}

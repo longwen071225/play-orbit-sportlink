@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SportLink · 教练端 & 管理端工作台</title>
+<style>
+  /* ---- Contact Cybernetic design language, vanilla-CSS adaptation ---- */
+  :root {
+    --ink: #1C2E1E; --ink-soft: #5A635A; --line: #F1F3F1; --paper: #FAFBF9;
+    --accent: #4D6D47; --bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: #EAECE9; color: var(--ink); }
+  html { -webkit-font-smoothing: antialiased; }
+  body { margin: 0; background: var(--bg); color: #000; overflow-x: hidden;
+    font-family: Inter, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  a { color: inherit; }
+  .wrap { max-width: 80rem; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* header */
+  header.top { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
+    border-bottom: 1px solid transparent; }
+  header.top .bar { display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 0; }
+  .logo { display: flex; align-items: baseline; gap: .75rem; user-select: none; }
+  .logo .word { font-size: 21px; letter-spacing: -.01em; font-weight: 500; }
+  .logo .star { font-size: 25px; line-height: 1; margin-bottom: 2px; }
+  nav.links { display: flex; gap: .25rem; font-size: 19px; color: #000; align-items: center; }
+  nav.links a, nav.links button { font-size: 19px; text-decoration: none; background: none; border: 0; cursor: pointer;
+    padding: 2px 4px; transition: opacity .2s; font-family: inherit; color: #000; }
+  nav.links a:hover, nav.links button:hover { opacity: .6; }
+  nav.links .dim { opacity: .4; }
+  nav.links a.active { text-decoration: underline; text-underline-offset: 4px; }
+  .navright { display: flex; align-items: center; gap: 12px; font-size: 16px; }
+  .navright .who { color: var(--ink-soft); font-size: 14px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px;
+    background: var(--ink); color: #fff; }
+  @media (max-width: 860px){ nav.links { display: none; } }
+
+  /* typewriter hero */
+  .hero { padding: 4.5rem 0 1rem; }
+  h1.typer { font-size: clamp(2.4rem, 6vw, 4.75rem); font-weight: 400; letter-spacing: -.02em;
+    line-height: 1.08; margin: 0 0 2rem; white-space: pre-wrap; user-select: none; }
+  .cursor { display: inline-block; width: 2px; height: 1.1em; background: #000; vertical-align: middle;
+    margin-left: 2px; animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+  .sub { font-size: 1.125rem; color: var(--ink-soft); line-height: 1.65; max-width: 42rem; margin: 0 0 3.5rem; }
+
+  /* drop-in animation (Framer drop-in equivalent) */
+  .drop { opacity: 0; animation: dropIn .6s ease forwards; }
+  @keyframes dropIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+  .d1 { animation-delay: .1s; } .d2 { animation-delay: .2s; } .d3 { animation-delay: .3s; }
+
+  /* stat tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 3rem; }
+  .tile { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px;
+    transition: box-shadow .25s, transform .25s; }
+  .tile:hover { box-shadow: 0 6px 24px rgba(28,46,30,.08); transform: translateY(-2px); }
+  .tile b { display: block; font-size: 2rem; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .tile span { font-size: 13px; color: var(--ink-soft); }
+
+  /* pills (service-pill design language) */
+  .pillrow { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 .75rem; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 10px 18px;
+    font-size: 14.5px; cursor: pointer; font-family: inherit;
+    background: #fff; color: var(--ink); border: 1px solid var(--line);
+    transition: background .2s, color .2s, transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s; }
+  .pill:hover { background: rgba(241,243,241,.55); }
+  .pill.on { background: var(--ink); color: #fff; border-color: var(--ink);
+    box-shadow: 0 4px 12px rgba(28,46,30,.12); transform: translateY(-1px); }
+  .pill .chk { display: inline-block; width: 0; overflow: hidden; font-size: 12px;
+    transition: width .25s cubic-bezier(.34,1.56,.64,1); }
+  .pill.on .chk { width: 14px; }
+
+  h2.sect { font-size: 1.5rem; font-weight: 500; letter-spacing: -.01em; margin: 3.2rem 0 .35rem; }
+  p.hint { color: #738273; font-size: 14px; margin: 0 0 1.6rem; }
+
+  /* banner (AnimatePresence equivalent) */
+  .banner { background: var(--paper); border: 1px solid var(--line); border-radius: 1rem;
+    padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    overflow: hidden; max-height: 0; opacity: 0; border-width: 0; margin: 0;
+    transition: max-height .35s ease, opacity .3s ease, margin .3s ease, border-width .3s; }
+  .banner.show { max-height: 120px; opacity: 1; border-width: 1px; margin: 1.4rem 0 2rem; }
+  .banner .go { color: var(--accent); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    background: none; border: 0; cursor: pointer; font-weight: 700; font-family: inherit; white-space: nowrap; }
+  .banner .msg { font-size: 14.5px; }
+  .placeholder { font-style: italic; opacity: .5; font-size: 12px; margin: 1.2rem 0 2rem; }
+
+  /* cards */
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px;
+    margin-bottom: 12px; transition: box-shadow .25s; }
+  .card:hover { box-shadow: 0 4px 18px rgba(28,46,30,.06); }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .chip.PENDING { background: #FEF3C7; color: #B45309; } .chip.ACCEPTED { background: #DBEAFE; color: #1D4ED8; }
+  .chip.IN_PROGRESS { background: #E0E7FF; color: #4338CA; } .chip.COMPLETED { background: #DCFCE7; color: #15803D; }
+  .chip.CANCELLED { background: #F3F4F6; color: #6B7280; } .chip.APPROVED { background: #DCFCE7; color: #15803D; }
+  .chip.OPEN { background: #E0F2FE; color: #0369A1; } .chip.SUBMITTED { background: #FEF3C7; color: #B45309; }
+  .chip.CONFIRMED { background: #DCFCE7; color: #15803D; } .chip.gray { background: #F3F4F6; color: #6B7280; }
+  .mut { color: var(--ink-soft); font-size: 13px; }
+  .rowbtn { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.act { border: 1px solid var(--ink); background: var(--ink); color: #fff; border-radius: 999px;
+    padding: 8px 16px; font-size: 13.5px; cursor: pointer; font-family: inherit; transition: opacity .2s, transform .15s; }
+  button.act:hover { opacity: .85; } button.act:active { transform: scale(.97); }
+  button.act.ghost { background: #fff; color: var(--ink); border-color: var(--line); }
+  button.act:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* forms */
+  label.f { display: block; font-size: 13px; color: var(--ink-soft); margin: 10px 0 4px; }
+  input.f, select.f, textarea.f { width: 100%; border: 1px solid var(--line); border-radius: 10px;
+    padding: 9px 12px; font-size: 14px; font-family: inherit; background: #fff; color: #000; }
+  input.f:focus, select.f:focus, textarea.f:focus { outline: 2px solid #EAECE9; border-color: #C9D4C9; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 700px){ .grid2 { grid-template-columns: 1fr; } }
+  .itemrow { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  @media (max-width: 700px){ .itemrow { grid-template-columns: 1fr 1fr; } }
+  .ok-msg { color: #15803D; font-size: 13.5px; } .err-msg { color: #B91C1C; font-size: 13.5px; }
+  .empty { color: var(--ink-soft); font-size: 14px; padding: 22px 0; }
+  .spin { color: var(--ink-soft); font-size: 13px; padding: 14px 0; }
+  .loginbox { max-width: 430px; margin: 12vh auto 0; }
+  .loginbox .card { padding: 26px; }
+  .loginbox .quick { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  footer.foot { padding: 3rem 0 2rem; color: var(--ink-soft); font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap bar">
+  <div class="logo"><span class="word">SportLink&reg;</span><span class="star">&#10033;</span></div>
+  <nav class="links" id="navLinks">
+    <a href="#/coach" data-r="coach">教练端</a><span class="dim">,&nbsp;</span>
+    <a href="#/admin" data-r="admin">管理端</a><span class="dim">,&nbsp;</span>
+    <a href="/demo">演示控制台</a><span class="dim">,&nbsp;</span>
+    <a href="/motion-coach">运动陪练</a>
+  </nav>
+  <div class="navright" id="navUser"></div>
+</div></header>
+
+<main class="wrap" id="app">
+  <div id="gate" class="loginbox">
+    <div class="card">
+      <h2 style="margin:0 0 6px;font-weight:500;letter-spacing:-.01em">登录工作台</h2>
+      <p class="mut" style="margin:0 0 4px">教练端与管理端。演示账号密码均为 <b>demo123456</b>。</p>
+      <div class="quick">
+        <button class="act" onclick="quickLogin('13900000001')">教练 · 王教练 (13900000001)</button>
+        <button class="act ghost" onclick="quickLogin('13700000000')">管理员 (13700000000)</button>
+        <button class="act ghost" onclick="quickLogin('13900000002')">教练 · 李教练 (13900000002)</button>
+      </div>
+      <div id="loginErr"></div>
+    </div>
+  </div>
+
+  <section id="sec-coach" style="display:none"></section>
+  <section id="sec-admin" style="display:none"></section>
+</main>
+<footer class="foot"><div class="wrap">SportLink 星动到家 · 教练端与管理端工作台 · 所有数据来自真实接口，演示账号数据明确标注为演示数据。</div></footer>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let TOKEN = localStorage.getItem("sl_token") || "";
+let USER = null;
+const ROUTES = ["coach", "admin"];
+const loaded = {};
+
+async function api(method, path, body) {
+  let res;
+  try { res = await fetch(path, { method, headers: { "Content-Type": "application/json", ...(TOKEN ? { Authorization: "Bearer " + TOKEN } : {}) }, body: body ? JSON.stringify(body) : undefined }); }
+  catch (e) { throw new Error("网络请求失败：" + e.message); }
+  if (res.status === 401) { TOKEN = ""; localStorage.removeItem("sl_token"); USER = null; renderNav(); showGate(); throw new Error("登录已失效，请重新登录"); }
+  const json = await res.json().catch(() => ({}));
+  if (json && json.success === false) throw new Error((json.error?.message || "请求失败") + " (" + json.error?.code + ")");
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return json.data;
+}
+const money = (c) => "¥" + (c / 100).toFixed(2);
+const fmtT = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+const chip = (s) => `<span class="chip ${esc(s)}">${({ PENDING: "待接单", ACCEPTED: "已接单", IN_PROGRESS: "进行中", COMPLETED: "已完成", CANCELLED: "已取消" }[s] || s)}</span>`;
+const spin = (t) => `<div class="spin">${t}…</div>`;
+const errBox = (e) => `<div class="err-msg">⚠ ${esc(e.message || e)}</div>`;
+
+/* ---- typewriter hook (useTypewriter equivalent) ---- */
+function typeInto(el, text, speed = 38, startDelay = 600) {
+  el.textContent = "";
+  const txt = document.createTextNode("");
+  const cur = document.createElement("span"); cur.className = "cursor";
+  el.appendChild(txt); el.appendChild(cur);
+  let i = 0;
+  setTimeout(() => {
+    const timer = setInterval(() => {
+      i += 1;
+      txt.textContent = text.slice(0, i);
+      if (i >= text.length) clearInterval(timer);
+    }, speed);
+  }, startDelay);
+}
+
+/* ---- nav / auth ---- */
+function renderNav() {
+  $("navUser").innerHTML = USER
+    ? `<span class="who">${esc(USER.name)}</span><span class="badge">${USER.role === "COACH" ? "教练" : USER.role === "ADMIN" ? "管理员" : "家长"}</span><button class="act ghost" style="padding:5px 12px" onclick="logout()">退出</button>`
+    : "";
+}
+function showGate() { $("gate").style.display = ""; ["sec-coach", "sec-admin"].forEach((s) => $(s).style.display = "none"); }
+async function quickLogin(phone) {
+  $("loginErr").innerHTML = "";
+  try {
+    const d = await api("POST", "/api/auth/login", { phone, password: "demo123456" });
+    TOKEN = d.token; USER = d.user; localStorage.setItem("sl_token", TOKEN);
+    Object.keys(loaded).forEach((k) => delete loaded[k]);
+    renderNav(); route();
+  } catch (e) { $("loginErr").innerHTML = errBox(e); }
+}
+function logout() { TOKEN = ""; localStorage.removeItem("sl_token"); USER = null; Object.keys(loaded).forEach((k) => delete loaded[k]); renderNav(); showGate(); }
+function gateWrong(role) { return `<div class="hero"><h1 class="typer">当前账号无权访问此工作台</h1><p class="sub">该区域仅对${role === "coach" ? "教练" : "管理员"}开放。请右上角退出后使用对应演示账号登录。</p></div>`; }
+
+/* ================= 教练端 ================= */
+const st = { filter: "ALL", orders: [] };
+async function renderCoach(sec) {
+  sec.innerHTML = spin("加载工作台");
+  let orders;
+  try { orders = (await api("GET", "/api/bookings")).items || []; }
+  catch (e) { sec.innerHTML = errBox(e); return; }
+  st.orders = orders;
+  const sum = (f) => orders.filter(f);
+  const revenue = sum((b) => b.status === "COMPLETED").reduce((a, b) => a + b.amountCents, 0);
+  const pending = sum((b) => b.status === "PENDING").length;
+  const firstName = (USER.name || "").replace(/（.*?）/g, "").trim();
+  sec.innerHTML = `
+    <div class="hero">
+      <h1 class="typer" id="heroTyper"></h1>
+      <div class="sub drop d1">这里汇总你的订单、课后反馈与家庭训练任务。学员完成 AI 陪练训练后，<br>成长星图会自动点亮新的星星。</div>
+    </div>
+    <div class="tiles drop d2">
+      <div class="tile"><b>${sum((b) => b.status === "PENDING").length}</b><span>待接单</span></div>
+      <div class="tile"><b>${sum((b) => b.status === "ACCEPTED" || b.status === "IN_PROGRESS").length}</b><span>已接单 / 进行中</span></div>
+      <div class="tile"><b>${sum((b) => b.status === "COMPLETED").length}</b><span>已完成课程</span></div>
+      <div class="tile"><b>${money(revenue)}</b><span>累计收入（模拟支付）</span></div>
+    </div>
+
+    <h2 class="sect drop d2">订单管理</h2>
+    <p class="hint drop d2">按状态筛选，直接接单、开课、完成。</p>
+    <div class="pillrow" id="orderPills"></div>
+    <div class="banner" id="orderBanner"><span class="msg" id="orderBannerMsg"></span><button class="go" onclick="setFilter('PENDING')">去处理 →</button></div>
+    <div id="orderCards"></div>
+
+    <h2 class="sect">课后反馈</h2>
+    <p class="hint">为已完成的课程提交真实训练记录（家长端可见）。</p>
+    <div class="card" id="fbCard">${fbFormHtml(orders)}</div>
+
+    <h2 class="sect">布置家庭训练</h2>
+    <p class="hint">为学员布置动作任务；接入 AI 陪练的动作可在训练页直接练习。</p>
+    <div class="card" id="taskCard">${taskFormHtml()}</div>
+
+    <h2 class="sect">学员任务审核</h2>
+    <p class="hint">家长提交完成记录后，确认即发放「挑战星」。</p>
+    <div id="reviewBox">${spin("加载任务")}</div>
+    <footer class="foot">教练工作台 · 数据实时来自后端接口</footer>
+  `;
+  typeInto($("heroTyper"), `${firstName}，\n把每一节课都上好！`);
+  drawPills(); drawOrders();
+  bindTaskForm();
+  loadReview();
+  updateBanner();
+}
+function drawPills() {
+  const defs = [["ALL", "全部"], ["PENDING", "待接单"], ["ACCEPTED", "已接单"], ["IN_PROGRESS", "进行中"], ["COMPLETED", "已完成"]];
+  $("orderPills").innerHTML = defs.map(([v, t]) => {
+    const n = v === "ALL" ? st.orders.length : st.orders.filter((b) => b.status === v).length;
+    return `<button class="pill ${st.filter === v ? "on" : ""}" onclick="setFilter('${v}')"><span class="chk">✓</span>${t} · ${n}</button>`;
+  }).join("");
+}
+function setFilter(f) { st.filter = f; drawPills(); drawOrders(); updateBanner(); }
+function updateBanner() {
+  const pending = st.orders.filter((b) => b.status === "PENDING");
+  const banner = $("orderBanner"), msg = $("orderBannerMsg");
+  if (!banner) return;
+  if (pending.length) { msg.innerHTML = `有 <b>${pending.length}</b> 个待接单订单等待处理，最快的一节在 ${fmtT(pending[0].startAt)}。`; banner.classList.add("show"); }
+  else banner.classList.remove("show");
+}
+function drawOrders() {
+  const list = st.filter === "ALL" ? st.orders : st.orders.filter((b) => b.status === st.filter);
+  $("orderCards").innerHTML = list.length ? list.map((b) => `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+      <div><b style="font-size:15px">${esc(b.id)}</b> ${chip(b.status)}
+        <div class="mut" style="margin-top:4px">${fmtT(b.startAt)} ~ ${fmtT(b.endAt)} · ${money(b.amountCents)} · 儿童 ${esc(b.childId)}</div></div>
+      <div class="rowbtn">${actions(b)}</div>
+    </div>`).join("") : `<div class="empty">该状态下暂无订单</div>`;
+}
+function actions(b) {
+  let a = "";
+  if (b.status === "PENDING") a = `<button class="act" onclick="bkAct('${b.id}','accept')">接单</button>`;
+  else if (b.status === "ACCEPTED") a = `<button class="act" onclick="bkAct('${b.id}','start')">开课</button>`;
+  else if (b.status === "IN_PROGRESS") a = `<button class="act" onclick="bkAct('${b.id}','complete')">完成课程</button>`;
+  if (["PENDING", "ACCEPTED"].includes(b.status)) a += ` <button class="act ghost" onclick="bkAct('${b.id}','cancel')">取消</button>`;
+  return a;
+}
+async function bkAct(id, act) {
+  try { await api("POST", "/api/bookings/" + id + "/" + act, {}); st.orders = (await api("GET", "/api/bookings")).items || []; drawPills(); drawOrders(); updateBanner(); }
+  catch (e) { $("orderCards").insertAdjacentHTML("afterbegin", errBox(e)); }
+}
+function fbFormHtml(orders) {
+  const done = orders.filter((b) => b.status === "COMPLETED");
+  if (!done.length) return `<div class="empty">暂无已完成课程；接单并完成课程后即可提交反馈。</div>`;
+  return `<label class="f">选择课程订单</label><select class="f" id="fbBooking">${done.map((b) => `<option value="${esc(b.id)}">${esc(b.id)} · ${fmtT(b.startAt)} · ${money(b.amountCents)}</option>`).join("")}</select>
+    <label class="f">训练内容（教练真实观察）</label><textarea class="f" id="fbContent" rows="3" placeholder="例：完成 20 分钟运球与平衡练习，单脚站立较上次更稳定"></textarea>
+    <div class="grid2"><div><label class="f">时长（分钟）</label><input class="f" id="fbDur" type="number" value="60" min="5" max="180"></div>
+    <div><label class="f">表现评分备注（可选 JSON 键值）</label><input class="f" id="fbPerf" placeholder='{"balance": 4}'></div></div>
+    <div class="rowbtn" style="margin-top:14px"><button class="act" onclick="submitFb()">提交课后反馈</button><span id="fbMsg"></span></div>`;
+}
+async function submitFb() {
+  $("fbMsg").innerHTML = spin("提交");
+  try {
+    let perf = {};
+    const raw = $("fbPerf").value.trim();
+    if (raw) perf = JSON.parse(raw);
+    await api("POST", "/api/training-records", { bookingId: $("fbBooking").value, content: $("fbContent").value.trim(), durationMinutes: Number($("fbDur").value), performance: perf });
+    $("fbMsg").innerHTML = `<span class="ok-msg">✓ 已保存，家长端立即可见</span>`;
+  } catch (e) { $("fbMsg").innerHTML = errBox(e); }
+}
+async function taskFormHtmlAsync() { return taskFormHtml(); }
+function taskFormHtml() {
+  return `<label class="f">任务标题</label><input class="f" id="tkTitle" placeholder="例：本周家庭训练：协调性 + 力量">
+    <label class="f">选择学员（限与自己有课程关联的儿童）</label><select class="f" id="tkChild"><option value="c_xingxing">小星（演示）</option><option value="c_xiaoyue">小跃（演示）</option></select>
+    <label class="f" style="margin-top:14px">动作项（可添加多条）</label><div id="tkItems"></div>
+    <button class="act ghost" onclick="addTkRow()">+ 添加动作</button>
+    <div class="rowbtn" style="margin-top:14px"><button class="act" onclick="submitTask()">布置任务</button><span id="tkMsg"></span></div>`;
+}
+async function bindTaskForm() {
+  let exercises = [];
+  try { exercises = (await api("GET", "/api/exercises")).items || []; } catch {}
+  window._exList = exercises;
+  addTkRow();
+}
+function addTkRow() {
+  const opts = (window._exList || [{ exerciseId: "", name: "（动作库加载失败）" }])
+    .map((e) => `<option value="${esc(e.exerciseId)}">${esc(e.name)}${e.category ? " · " + esc(e.category) : ""}</option>`).join("");
+  const row = document.createElement("div");
+  row.className = "itemrow";
+  row.innerHTML = `<input class="f" placeholder="显示名（可自定义）" value="">
+    <select class="f ex">${opts}</select>
+    <input class="f reps" type="number" placeholder="次数" min="1" max="100">
+    <input class="f sets" type="number" placeholder="组数" min="1" max="10">
+    <button class="act ghost" onclick="this.parentNode.remove()">删</button>`;
+  $("tkItems").appendChild(row);
+  row.querySelector(".ex").addEventListener("change", (e) => {
+    const ex = (window._exList || []).find((x) => x.exerciseId === e.target.value);
+    row.querySelector("input").value = ex ? ex.name : "";
+  });
+  const first = (window._exList || [])[0];
+  if (first) { row.querySelector(".ex").value = first.exerciseId; row.querySelector("input").value = first.name; }
+}
+async function submitTask() {
+  $("tkMsg").innerHTML = spin("提交");
+  try {
+    const items = Array.from(document.querySelectorAll("#tkItems .itemrow")).map((r) => {
+      const it = { name: r.querySelector("input").value.trim() || r.querySelector(".ex").selectedOptions[0].textContent.split(" · ")[0], exerciseId: r.querySelector(".ex").value || undefined };
+      if (r.querySelector(".reps").value) it.reps = Number(r.querySelector(".reps").value);
+      if (r.querySelector(".sets").value) it.sets = Number(r.querySelector(".sets").value);
+      return it;
+    }).filter((it) => it.name);
+    if (!items.length) throw new Error("至少添加一个动作项");
+    await api("POST", "/api/tasks", { childId: $("tkChild").value, title: $("tkTitle").value.trim() || "家庭训练任务", items, goalCount: Math.min(items.length, 20) });
+    $("tkMsg").innerHTML = `<span class="ok-msg">✓ 已布置，家长与 AI 陪练立即可见</span>`;
+  } catch (e) { $("tkMsg").innerHTML = errBox(e); }
+}
+async function loadReview() {
+  try {
+    const tasks = (await api("GET", "/api/tasks")).items || [];
+    const mine = tasks.filter((t) => t.status === "SUBMITTED");
+    if (!mine.length) { $("reviewBox").innerHTML = `<div class="empty">暂无待审核提交。家长在演示控制台提交任务后会出现在这里。</div>`; return; }
+    $("reviewBox").innerHTML = mine.map((t) => `
+      <div class="card"><b>${esc(t.title)}</b> ${chip(t.status)} <span class="mut">儿童 ${esc(t.childId)} · ${esc(t.items.map((i) => i.name).join("、"))}</span>
+        <div id="sub-${esc(t.id)}" style="margin-top:10px">${spin("加载提交")}</div></div>`).join("");
+    for (const t of mine) {
+      const subs = (await api("GET", `/api/tasks/${t.id}/submissions`)).submissions || [];
+      const box = $("sub-" + t.id);
+      box.innerHTML = subs.length ? subs.map((s) => `
+        <div style="border-top:1px solid var(--line);padding-top:10px;margin-top:6px">
+          <div class="mut">${esc(s.content || "（无文字说明）")} · ${fmtT(s.createdAt)}</div>
+          <div style="display:flex;gap:8px;margin-top:8px"><input class="f" style="flex:1" id="cfb-${esc(s.id)}" placeholder="教练反馈（确认后发放挑战星）">
+          <button class="act" onclick="confirmSub('${esc(t.id)}','${esc(s.id)}')">确认完成</button></div>
+        </div>`).join("") : `<div class="empty">该任务暂无提交</div>`;
+    }
+  } catch (e) { $("reviewBox").innerHTML = errBox(e); }
+}
+async function confirmSub(taskId, subId) {
+  try {
+    await api("POST", `/api/tasks/${taskId}/submissions/${subId}/confirm`, { coachFeedback: document.getElementById("cfb-" + subId).value.trim() });
+    loadReview();
+  } catch (e) { $("reviewBox").insertAdjacentHTML("afterbegin", errBox(e)); }
+}
+
+/* ================= 管理端 ================= */
+async function renderAdmin(sec) {
+  sec.innerHTML = spin("加载控制台");
+  let stats, orders, coaches, tasks;
+  try {
+    [stats, orders, coaches, tasks] = await Promise.all([
+      api("GET", "/api/admin/stats"), api("GET", "/api/bookings"), api("GET", "/api/coaches"), api("GET", "/api/tasks"),
+    ]);
+  } catch (e) { sec.innerHTML = errBox(e); return; }
+  const bs = stats.bookings.byStatus || {};
+  sec.innerHTML = `
+    <div class="hero">
+      <h1 class="typer" id="heroTyper"></h1>
+      <div class="sub drop d1">平台运营总览：用户、订单、训练与成长数据全部来自真实数据库。<br>金额为模拟支付统计，未接入任何真实扣款。</div>
+    </div>
+    <div class="tiles drop d2">
+      <div class="tile"><b>${stats.users}</b><span>注册用户</span></div>
+      <div class="tile"><b>${stats.children}</b><span>儿童档案</span></div>
+      <div class="tile"><b>${stats.coaches}</b><span>认证教练</span></div>
+      <div class="tile"><b>${stats.bookings.total}</b><span>订单总数</span></div>
+      <div class="tile"><b>${stats.growthStars}</b><span>成长星星</span></div>
+      <div class="tile"><b>${money(stats.revenueSimulatedCents)}</b><span>模拟支付金额</span></div>
+    </div>
+
+    <h2 class="sect drop d2">订单总览</h2>
+    <p class="hint drop d2">按状态筛选（待接单 ${bs.PENDING || 0} · 已接单 ${bs.ACCEPTED || 0} · 进行中 ${bs.IN_PROGRESS || 0} · 已完成 ${bs.COMPLETED || 0} · 已取消 ${bs.CANCELLED || 0}）</p>
+    <div class="pillrow" id="adPills"></div>
+    <div id="adOrders"></div>
+
+    <h2 class="sect">教练团队</h2>
+    <p class="hint">全部 ${stats.coaches} 位教练及认证状态。</p>
+    <div id="adCoaches"></div>
+
+    <h2 class="sect">家庭训练任务</h2>
+    <p class="hint">共 ${stats.familyTasks} 个任务。</p>
+    <div id="adTasks"></div>
+    <footer class="foot">管理控制台 · ${esc(stats.note || "")}</footer>
+  `;
+  typeInto($("heroTyper"), "管理控制台\n让每一次成长都被看见");
+  window._adOrders = orders.items || [];
+  drawAdPills(); drawAdOrders();
+  $("adCoaches").innerHTML = coaches.items.map((c) => `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div><b>${esc(c.name)}</b> <span class="chip ${esc(c.certificateStatus)}">${esc(c.certificateStatus)}</span>
+        <div class="mut" style="margin-top:4px">${esc((c.courseTypes || []).join(" · "))} · 服务：${esc((c.serviceAreas || []).join("、"))}</div></div>
+      <div style="font-weight:600">${money(c.priceCents)}<span class="mut">/次起</span></div>
+    </div>`).join("");
+  $("adTasks").innerHTML = (tasks.items || []).length ? tasks.items.map((t) => `
+    <div class="card"><b>${esc(t.title)}</b> ${chip(t.status)} <span class="mut">儿童 ${esc(t.childId)} · ${t.items.length} 个动作 · 教练 ${esc(t.coachId)}</span></div>`).join("")
+    : `<div class="empty">暂无家庭训练任务</div>`;
+}
+function drawAdPills() {
+  const defs = [["ALL", "全部"], ["PENDING", "待接单"], ["ACCEPTED", "已接单"], ["IN_PROGRESS", "进行中"], ["COMPLETED", "已完成"], ["CANCELLED", "已取消"]];
+  $("adPills").innerHTML = defs.map(([v, t]) => {
+    const n = v === "ALL" ? window._adOrders.length : window._adOrders.filter((b) => b.status === v).length;
+    return `<button class="pill ${window._adFilter === v ? "on" : ""}" onclick="adFilter('${v}')"><span class="chk">✓</span>${t} · ${n}</button>`;
+  }).join("");
+}
+window._adFilter = "ALL";
+function adFilter(f) { window._adFilter = f; drawAdPills(); drawAdOrders(); }
+function drawAdOrders() {
+  const list = window._adFilter === "ALL" ? window._adOrders : window._adOrders.filter((b) => b.status === window._adFilter);
+  $("adOrders").innerHTML = list.length ? list.map((b) => `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div><b style="font-size:14.5px">${esc(b.id)}</b> ${chip(b.status)}
+      <div class="mut" style="margin-top:4px">${fmtT(b.startAt)} · ${money(b.amountCents)} · 家长 ${esc(b.parentId)} · 教练 ${esc(b.coachId)}</div></div>
+    </div>`).join("") : `<div class="empty">该状态下暂无订单</div>`;
+}
+
+/* ---- routing ---- */
+function showApp() { $("gate").style.display = "none"; }
+function route() {
+  const r = (location.hash || "#/coach").replace(/^#\//, "").split("?")[0];
+  const target = ROUTES.includes(r) ? r : "coach";
+  document.querySelectorAll("#navLinks a[data-r]").forEach((a) => a.classList.toggle("active", a.dataset.r === target));
+  if (!USER) { showGate(); return; }
+  showApp();
+  $("sec-coach").style.display = target === "coach" ? "" : "none";
+  $("sec-admin").style.display = target === "admin" ? "" : "none";
+  if (target === "coach" && USER.role !== "COACH") { $("sec-coach").innerHTML = gateWrong("coach"); return; }
+  if (target === "admin" && USER.role !== "ADMIN") { $("sec-admin").innerHTML = gateWrong("admin"); return; }
+  if (!loaded[target]) { loaded[target] = true; target === "coach" ? renderCoach($("sec-coach")) : renderAdmin($("sec-admin")); }
+}
+window.addEventListener("hashchange", route);
+(async () => {
+  if (TOKEN) { try { USER = (await api("GET", "/api/auth/me")).user; } catch { TOKEN = ""; localStorage.removeItem("sl_token"); } }
+  renderNav(); route();
+})();
+</script>
+</body>
+</html>

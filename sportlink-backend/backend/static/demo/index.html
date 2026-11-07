@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SportLink 星动到家 · 演示控制台</title>
+<style>
+:root{
+  --green:#00B14D;--green-h:#009641;--text:#0B0F14;--muted:#6B7280;
+  --border:#E5E7EB;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;color:var(--text);background:#FFFFFF;line-height:1.55}
+a{color:inherit;text-decoration:none}
+/* nav */
+.nav{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:10}
+.nav-inner{max-width:1120px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:8px;height:56px}
+.logo{font-weight:600;font-size:18px;white-space:nowrap}
+.logo b{color:var(--green)}
+.nav-links{display:flex;gap:4px;overflow-x:auto;flex:1}
+.nav-links a{padding:8px 12px;border-radius:8px;font-size:14px;color:var(--muted);white-space:nowrap}
+.nav-links a:hover{background:#F3F4F6;color:var(--text)}
+.nav-links a.active{color:var(--green);font-weight:600;background:#E8F8EF}
+.nav-user{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#EFF6FF;color:#1D4ED8}
+.btn{display:inline-block;border:none;cursor:pointer;font:inherit;font-size:14px;padding:8px 16px;border-radius:8px;background:#F3F4F6;color:var(--text);transition:.15s}
+.btn:hover{filter:brightness(.97)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-h)}
+.btn-sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.motion-btn{background:var(--green);color:#fff;font-weight:600;padding:8px 14px;border-radius:8px}
+/* layout */
+.wrap{max-width:1120px;margin:0 auto;padding:24px}
+h2{font-size:22px;font-weight:600;margin-bottom:4px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.10)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;background:#F3F4F6;color:var(--muted);margin:0 4px 4px 0}
+.chip-g{background:#E8F8EF;color:var(--green-h)}
+.st-PENDING{background:#FEF3C7;color:#B45309}
+.st-ACCEPTED{background:#DBEAFE;color:#1D4ED8}
+.st-IN_PROGRESS{background:#E0E7FF;color:#4338CA}
+.st-COMPLETED{background:#D1FAE5;color:#047857}
+.st-CANCELLED{background:#F3F4F6;color:#6B7280}
+.st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:500}
+.err{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:10px 14px;border-radius:8px;margin:12px 0;font-size:14px}
+.ok{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;padding:10px 14px;border-radius:8px;margin:12px 0;font-size:14px}
+.spin{color:var(--muted);padding:24px 0;text-align:center;font-size:14px}
+.spin::after{content:"";display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;margin-left:8px;vertical-align:-2px;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{color:var(--muted);text-align:center;padding:32px 0;font-size:14px;border:1px dashed var(--border);border-radius:var(--radius)}
+label{font-size:13px;color:var(--muted);display:block;margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;font-size:14px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}
+select,input,textarea{max-width:100%}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.row>*{flex:1;min-width:140px}
+.section{display:none}
+.section.active{display:block}
+/* login card */
+.login-card{max-width:420px;margin:40px auto;text-align:center}
+.login-card .btn{width:100%;margin-top:8px}
+/* wizard */
+.steps{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.step{padding:6px 14px;border-radius:999px;font-size:13px;background:#F3F4F6;color:var(--muted)}
+.step.on{background:var(--green);color:#fff}
+.step.done{background:#E8F8EF;color:var(--green-h)}
+/* agent chat */
+.chat{border:1px solid var(--border);border-radius:var(--radius);height:460px;overflow-y:auto;padding:16px;background:#FAFAFA}
+.msg{max-width:75%;margin-bottom:12px;padding:10px 14px;border-radius:12px;font-size:14px;white-space:pre-wrap;word-break:break-word}
+.msg.ai{background:#fff;border:1px solid var(--border);border-top-left-radius:4px}
+.msg.user{background:var(--green);color:#fff;margin-left:auto;border-top-right-radius:4px}
+.meta{font-size:12px;color:var(--muted);margin-top:16px}
+.confirm-card{background:#F0FDF4;border:1px solid #86EFAC;border-radius:12px;padding:12px 16px;margin:8px 0;max-width:75%;font-size:14px}
+.chat-input{display:flex;gap:8px;margin-top:12px}
+/* stars */
+.star-panel{position:relative;background:#0B1026;border-radius:var(--radius);overflow:hidden;height:460px;margin-bottom:16px}
+.star-dot{position:absolute;border-radius:50%;cursor:pointer;animation:tw 3s ease-in-out infinite alternate}
+@keyframes tw{from{opacity:.55}to{opacity:1;box-shadow:0 0 12px 3px currentColor}}
+.star-line{position:absolute;height:1px;background:rgba(255,255,255,.15);transform-origin:0 50%}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.star-detail{position:absolute;top:16px;right:16px;width:280px;background:rgba(255,255,255,.97);border-radius:12px;padding:16px;font-size:13px;display:none;z-index:2}
+.star-detail.show{display:block}
+/* misc */
+.sec-head{margin-bottom:8px}
+h3.cat{font-size:16px;font-weight:600;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.tag-gray{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;background:#F3F4F6;color:#9CA3AF}
+.item-line{display:flex;gap:8px;margin-bottom:6px}
+.item-line input{flex:1}
+.item-line input.num{max-width:90px}
+@media (max-width:640px){.nav-inner{height:auto;padding:8px 16px;flex-wrap:wrap}.nav-user{margin-left:auto}}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner">
+  <a class="logo" href="#/coaches"><b>●</b> SportLink <span style="font-size:12px;color:var(--muted)">星动到家</span></a>
+  <div class="nav-links" id="navLinks">
+    <a href="#/coaches" data-r="coaches">教练列表</a>
+    <a href="#/booking" data-r="booking">预约</a>
+    <a href="#/agent" data-r="agent">AI 助手</a>
+    <a href="#/feedback" data-r="feedback">课后反馈</a>
+    <a href="#/stars" data-r="stars">成长星图</a>
+    <a href="#/exercises" data-r="exercises">动作库</a>
+  </div>
+  <div class="nav-user" id="navUser"></div>
+  <a class="motion-btn" href="javascript:void(0)" onclick="openEmbed('/motion-coach','AI 运动陪练')">✦ AI 运动陪练</a>
+  <a class="motion-btn" href="javascript:void(0)" onclick="openEmbed('/coach-app','教练端 / 管理端')" style="background:#1C2E1E">教练端 / 管理端</a>
+</div></nav>
+<div id="embedWrap" style="display:none">
+  <div style="position:sticky;top:56px;z-index:9;background:#fff;border-bottom:1px solid var(--border);padding:8px 24px">
+    <button class="btn btn-sm" onclick="closeEmbed()">← 返回演示控制台</button>
+    <span id="embedTitle" style="margin-left:12px;color:var(--muted);font-size:14px"></span>
+  </div>
+  <iframe id="embedFrame" title="平台功能" style="width:100%;height:calc(100vh - 97px);border:0;display:block" allow="camera;microphone;fullscreen"></iframe>
+</div>
+<div class="wrap">
+  <div id="loginGate" class="login-card card" style="display:none">
+    <h2 style="margin-bottom:8px">请先登录</h2>
+    <p class="sub">选择一个演示账号快速登录（密码均为 demo123456）</p>
+    <button class="btn btn-green" onclick="quickLogin('13800000001','林女士')">家长 · 林女士 (13800000001)</button>
+    <button class="btn btn-green" onclick="quickLogin('13900000001','王教练')">教练 · 王教练 (13900000001)</button>
+    <button class="btn btn-green" onclick="quickLogin('13700000000','管理员')">管理员 (13700000000)</button>
+    <div id="loginErr"></div>
+  </div>
+  <div id="app">
+    <section class="section" id="sec-coaches"></section>
+    <section class="section" id="sec-booking"></section>
+    <section class="section" id="sec-agent"></section>
+    <section class="section" id="sec-feedback"></section>
+    <section class="section" id="sec-stars"></section>
+    <section class="section" id="sec-exercises"></section>
+  </div>
+</div>
+<script>
+"use strict";
+/* ---------- api helper ---------- */
+let TOKEN = localStorage.getItem("sl_token") || "";
+let USER = null;
+async function api(method, path, body){
+  const opt = {method, headers:{"Content-Type":"application/json"}};
+  if (TOKEN) opt.headers["Authorization"] = "Bearer " + TOKEN;
+  if (body !== undefined) opt.body = JSON.stringify(body);
+  let res, json;
+  try { res = await fetch(path, opt); json = await res.json(); }
+  catch(e){ throw new Error("网络请求失败：" + e.message); }
+  if (res.status === 401){ TOKEN=""; localStorage.removeItem("sl_token"); USER=null; renderNav(); showLogin(); throw new Error("登录已失效，请重新登录"); }
+  if (json && json.success === false) throw new Error((json.error&&json.error.message||"请求失败") + " (" + (json.error&&json.error.code||"") + ")");
+  if (!res.ok) throw new Error("请求失败 HTTP " + res.status);
+  return json.data;
+}
+/* ---------- shell ---------- */
+const $ = s => document.querySelector(s);
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function spinTxt(t){ return '<div class="spin">' + esc(t||"加载中") + '</div>'; }
+function errHtml(e){ return '<div class="err">' + esc(e.message||String(e)) + '</div>'; }
+function roleBadge(r){ const m={PARENT:"家长",COACH:"教练",ADMIN:"管理员"}; return '<span class="badge">'+esc(m[r]||r)+'</span>'; }
+function statusChip(s){ const m={PENDING:"待接单",ACCEPTED:"已接单",IN_PROGRESS:"进行中",COMPLETED:"已完成",CANCELLED:"已取消"}; return '<span class="st st-'+esc(s)+'">'+esc(m[s]||s)+'</span>'; }
+function fmtMoney(c){ return "¥" + (c/100); }
+function fmtTime(iso){ try { return new Date(iso).toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}); } catch(e){ return iso; } }
+function showLogin(){ el("app").style.display="none"; el("loginGate").style.display="block"; el("embedWrap").style.display="none"; }
+function showApp(){ el("loginGate").style.display="none"; el("app").style.display="block"; el("embedWrap").style.display="none"; }
+function openEmbed(src, title){
+  el("app").style.display="none";
+  el("loginGate").style.display="none";
+  el("embedWrap").style.display="block";
+  el("embedTitle").textContent = title;
+  el("embedFrame").src = src;
+}
+function closeEmbed(){
+  el("embedWrap").style.display="none";
+  el("embedFrame").src = "about:blank";
+  route();
+}
+function renderNav(){
+  if (USER){
+    el("navUser").innerHTML = esc(USER.name) + " " + roleBadge(USER.role) +
+      ' <button class="btn btn-sm" id="logoutBtn">退出</button>';
+    el("logoutBtn").onclick = () => { TOKEN=""; localStorage.removeItem("sl_token"); USER=null; Object.keys(loaded).forEach(k=>delete loaded[k]); renderNav(); showLogin(); };
+  } else el("navUser").innerHTML = '<button class="btn btn-sm btn-green" onclick="quickLogin()">登录</button>';
+}
+async function quickLogin(phone, name){
+  if (!phone) phone = prompt("输入演示账号手机号（13800000001 / 13900000001 / 13700000000）","");
+  if (!phone) return;
+  el("loginErr").innerHTML = "";
+  try{
+    const d = await api("POST","/api/auth/login",{phone, password:"demo123456"});
+    TOKEN = d.token; USER = d.user; localStorage.setItem("sl_token", TOKEN);
+    Object.keys(loaded).forEach(k=>delete loaded[k]);
+    renderNav(); showApp(); route();
+  }catch(e){ el("loginErr").innerHTML = errHtml(e); }
+}
+/* ---------- hash routing ---------- */
+const ROUTES = ["coaches","booking","agent","feedback","stars","exercises"];
+const loaded = {};
+function route(){
+  let r = (location.hash||"#/coaches").replace(/^#\//,"").split("?")[0];
+  if (!ROUTES.includes(r)) r = "coaches";
+  if (!TOKEN){ showLogin(); return; }
+  showApp();
+  document.querySelectorAll(".nav-links a").forEach(a => a.classList.toggle("active", a.dataset.r===r));
+  ROUTES.forEach(x => el("sec-"+x).classList.toggle("active", x===r));
+  if (!loaded[r]){ loaded[r]=true; renderSection(r); }
+}
+window.addEventListener("hashchange", route);
+/* ---------- 1. coaches ---------- */
+let coachCache = [], coachDetailId = null, motionExercises = [];
+async function renderSection(r){
+  const sec = el("sec-"+r);
+  try{
+    if (r==="coaches") await renderCoaches(sec);
+    else if (r==="booking") await renderBooking(sec);
+    else if (r==="agent") renderAgent(sec);
+    else if (r==="feedback") await renderFeedback(sec);
+    else if (r==="stars") await renderStars(sec);
+    else if (r==="exercises") await renderExercises(sec);
+  }catch(e){ sec.innerHTML = errHtml(e); }
+}
+async function renderCoaches(sec){
+  sec.innerHTML = spinTxt("加载教练列表");
+  const d = await api("GET","/api/coaches");
+  coachCache = d.items||[];
+  const types = [...new Set(coachCache.flatMap(c=>c.courseTypes||[]))];
+  const areas = [...new Set(coachCache.flatMap(c=>c.serviceAreas||[]))];
+  const opt = (arr,sel) => '<option value="">全部</option>' + arr.map(v=>'<option'+(v===sel?" selected":"")+'>'+esc(v)+'</option>').join("");
+  sec.innerHTML =
+    '<h2>教练列表</h2><p class="sub">筛选并查看认证教练，点击卡片查看服务与可约时间</p>' +
+    '<div class="row"><div><label>运动类型</label><select id="fType">'+opt(types,coachFilter.type)+'</select></div>' +
+    '<div><label>服务区域</label><select id="fArea">'+opt(areas,coachFilter.area)+'</select></div>' +
+    '<div style="flex:2"><label>搜索</label><input id="fKw" placeholder="教练姓名关键词" value="'+esc(coachFilter.kw)+'"></div></div>' +
+    '<div id="coachGrid" class="grid" style="margin-top:16px"></div><div id="coachDetail"></div>';
+  el("fType").onchange = e => { coachFilter.type=e.target.value; drawCoaches(); };
+  el("fArea").onchange = e => { coachFilter.area=e.target.value; drawCoaches(); };
+  el("fKw").oninput = e => { coachFilter.kw=e.target.value; drawCoaches(); };
+  drawCoaches();
+}
+const coachFilter = {type:"",area:"",kw:""};
+function drawCoaches(){
+  const kw = coachFilter.kw.trim();
+  const list = coachCache.filter(c =>
+    (!coachFilter.type || (c.courseTypes||[]).includes(coachFilter.type)) &&
+    (!coachFilter.area || (c.serviceAreas||[]).includes(coachFilter.area)) &&
+    (!kw || (c.name||"").includes(kw)));
+  el("coachGrid").innerHTML = list.length ? list.map(c =>
+    '<div class="card" style="cursor:pointer" onclick="openCoach(\''+esc(c.id)+'\')">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:16px">'+esc(c.name)+'</b>' +
+    (c.certificateStatus==="APPROVED"?'<span class="chip chip-g">已认证</span>':'<span class="chip">未认证</span>')+'</div>' +
+    '<div style="margin:6px 0">'+(c.courseTypes||[]).map(t=>'<span class="chip">'+esc(t)+'</span>').join("")+'</div>' +
+    '<div style="font-size:13px;color:var(--muted)">服务区域：'+esc((c.serviceAreas||[]).join("、"))+'</div>' +
+    '<div style="margin-top:8px;font-size:14px"><b style="color:var(--green)">'+fmtMoney(c.priceCents)+'</b> /次</div>' +
+    '<div style="font-size:13px;color:var(--muted);margin-top:6px">'+esc(c.bio)+'</div></div>').join("")
+    : '<div class="empty" style="grid-column:1/-1">没有符合条件的教练</div>';
+}
+async function openCoach(id){
+  const box = el("coachDetail");
+  box.innerHTML = spinTxt("加载教练详情");
+  try{
+    const c = await api("GET","/api/coaches/"+id);
+    const s = await api("GET","/api/coaches/"+id+"/slots");
+    const slots = s.slots||[];
+    box.innerHTML = '<div class="card" style="margin-top:16px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><h3>'+esc(c.name)+' · 详情</h3>' +
+      '<button class="btn btn-sm" onclick="coachDetailId=null;el(\'coachDetail\').innerHTML=\'\'">收起</button></div>' +
+      '<p style="font-size:14px;color:var(--muted);margin:8px 0">'+esc(c.bio)+'</p>' +
+      '<h3 class="cat">服务课程</h3><div class="grid">'+(c.services||[]).map(sv =>
+        '<div class="card"><b>'+esc(sv.title)+'</b><div style="margin:4px 0"><span class="chip">'+esc(sv.sportType)+'</span>' +
+        '<span class="chip">'+sv.durationMinutes+'分钟</span></div>' +
+        '<div style="color:var(--green);font-weight:600">'+fmtMoney(sv.priceCents)+'/次</div>' +
+        '<div style="font-size:13px;color:var(--muted);margin-top:4px">'+esc(sv.description)+'</div></div>').join("")+'</div>' +
+      '<h3 class="cat">可约时间</h3>' +
+      (slots.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px">'+slots.map(sl =>
+        '<span style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px">' +
+        fmtTime(sl.startAt) + ' ~ ' + fmtTime(sl.endAt) +
+        (sl.status==="OPEN"?' <span class="chip chip-g">可约</span>':' <span class="tag-gray">'+esc(sl.status)+'</span>')+'</span>').join("")+'</div>'
+        : '<div class="empty">暂无可约时间</div>') + '</div>';
+    box.scrollIntoView({behavior:"smooth"});
+  }catch(e){ box.innerHTML = errHtml(e); }
+}
+/* ---------- 2. booking ---------- */
+const bk = {childId:"",coachId:"",serviceId:"",slot:null};
+async function renderBooking(sec){
+  sec.innerHTML = spinTxt("加载预约信息");
+  const [ch, co, orders] = await Promise.all([
+    api("GET","/api/children"), api("GET","/api/coaches"), api("GET","/api/bookings")]);
+  bk.children = ch.items||[]; bk.coaches = co.items||[];
+  const isParent = USER && USER.role==="PARENT";
+  const isCoach = USER && USER.role==="COACH";
+  sec.innerHTML = '<h2>预约课程</h2><p class="sub">' +
+    (isParent ? "按步骤选择孩子、教练服务与时间，提交后等待教练接单" :
+     isCoach ? "教练视角：处理学员订单（接单 / 开课 / 完成）" : "管理员视角：查看全部订单") + '</p>' +
+    (isParent ? wizardHtml() : '') +
+    '<h3 class="cat">订单列表</h3><div id="orderList">'+spinTxt("加载订单")+'</div>';
+  if (isParent) bindWizard();
+  drawOrders(orders.items||[]);
+}
+function wizardHtml(){
+  return '<div class="card">' +
+    '<div class="steps"><span class="step on" id="st1">① 选择孩子</span><span class="step" id="st2">② 选择教练服务</span><span class="step" id="st3">③ 选择时间</span></div>' +
+    '<div class="row"><div><label>孩子</label><select id="bkChild"><option value="">请选择</option>' +
+      bk.children.map(c=>'<option value="'+esc(c.id)+'"'+(bk.childId===c.id?" selected":"")+'>'+esc(c.nickname)+'（'+c.age+'岁）</option>').join("")+'</select></div>' +
+    '<div><label>教练</label><select id="bkCoach"><option value="">请选择</option>' +
+      bk.coaches.map(c=>'<option value="'+esc(c.id)+'"'+(bk.coachId===c.id?" selected":"")+'>'+esc(c.name)+'</option>').join("")+'</select></div>' +
+    '<div><label>服务课程</label><select id="bkService"><option value="">请先选择教练</option></select></div></div>' +
+    '<div id="bkSlots" style="margin-top:12px"></div>' +
+    '<div id="bkErr"></div><button class="btn btn-green" id="bkSubmit" style="margin-top:12px">提交预约</button></div>';
+}
+async function bindWizard(){
+  const setSteps = n => { [1,2,3].forEach(i=>{ const s=el("st"+i); s.className="step"+(i<n?" done":i===n?" on":""); }); };
+  el("bkChild").onchange = e => { bk.childId=e.target.value; setSteps(bk.childId?(bk.coachId&&bk.serviceId?3:2):1); };
+  el("bkCoach").onchange = async e => {
+    bk.coachId=e.target.value; bk.serviceId=""; setSteps(bk.coachId?2:1);
+    const sel = el("bkService");
+    if (!bk.coachId){ sel.innerHTML='<option value="">请先选择教练</option>'; el("bkSlots").innerHTML=""; return; }
+    sel.innerHTML='<option value="">加载中…</option>';
+    try{
+      const c = await api("GET","/api/coaches/"+bk.coachId);
+      bk.services = c.services||[];
+      sel.innerHTML = '<option value="">请选择</option>' + bk.services.map(s=>'<option value="'+esc(s.id)+'">'+esc(s.title)+' · '+fmtMoney(s.priceCents)+'</option>').join("");
+      setSteps(2);
+    }catch(err){ sel.innerHTML='<option value="">加载失败</option>'; el("bkErr").innerHTML=errHtml(err); }
+  };
+  el("bkService").onchange = async e => {
+    bk.serviceId=e.target.value; setSteps(bk.serviceId?3:2);
+    if (!bk.serviceId){ el("bkSlots").innerHTML=""; return; }
+    el("bkSlots").innerHTML = spinTxt("加载可约时间");
+    try{
+      const s = await api("GET","/api/coaches/"+bk.coachId+"/slots");
+      const avail = (s.slots||[]).filter(x=>x.status==="OPEN");
+      el("bkSlots").innerHTML = avail.length ? '<label>可约时间段</label>' + avail.map(x=>
+        '<label style="display:flex;align-items:center;gap:8px;color:var(--text);font-size:14px;margin:4px 0">' +
+        '<input type="radio" name="slot" value="'+esc(x.slotId)+'" data-start="'+esc(x.startAt)+'" data-end="'+esc(x.endAt)+'" style="width:auto"> ' +
+        fmtTime(x.startAt)+' ~ '+fmtTime(x.endAt)+'</label>').join("")
+        : '<div class="empty">该教练暂无可约时间</div>';
+      el("bkSlots").querySelectorAll("input[name=slot]").forEach(r=>r.onchange=()=>{ bk.slot={id:r.value,startAt:r.dataset.start,endAt:r.dataset.end}; setSteps(3); });
+    }catch(err){ el("bkSlots").innerHTML=errHtml(err); }
+  };
+  if (bk.childId) el("bkChild").value=bk.childId;
+  if (bk.coachId){ el("bkCoach").value=bk.coachId; el("bkCoach").onchange({target:{value:bk.coachId}}); }
+  el("bkSubmit").onclick = async () => {
+    el("bkErr").innerHTML="";
+    if (!bk.childId || !bk.serviceId || !bk.slot){ el("bkErr").innerHTML='<div class="err">请完成三个步骤后再提交</div>'; return; }
+    el("bkSubmit").disabled=true;
+    try{
+      const b = await api("POST","/api/bookings",{childId:bk.childId, serviceId:bk.serviceId, startAt:bk.slot.startAt, endAt:bk.slot.endAt});
+      el("bkErr").innerHTML = '<div class="ok">预约成功！订单号 '+esc(b.id)+'，金额 '+fmtMoney(b.amountCents)+'，等待教练接单。</div>';
+      const orders = await api("GET","/api/bookings");
+      drawOrders(orders.items||[]);
+    }catch(e){ el("bkErr").innerHTML = errHtml(e); }
+    el("bkSubmit").disabled=false;
+  };
+}
+let orderFilter = "ALL";
+function drawOrders(items){
+  const box = el("orderList"); if(!box) return;
+  const isCoach = USER && USER.role==="COACH";
+  const chips = ["ALL","PENDING","ACCEPTED","IN_PROGRESS","COMPLETED"].map(f=>{
+    const n = f==="ALL" ? items.length : items.filter(b=>b.status===f).length;
+    return '<button class="btn btn-sm'+(orderFilter===f?' btn-green':'')+'" onclick="setOrderFilter(\''+f+'\')">'+
+      ({ALL:"全部",PENDING:"待接单",ACCEPTED:"已接单",IN_PROGRESS:"进行中",COMPLETED:"已完成"}[f])+' ('+n+')</button>';
+  }).join(" ");
+  const filtered = orderFilter==="ALL" ? items : items.filter(b=>b.status===orderFilter);
+  if (!filtered.length){ box.innerHTML='<div style="margin-bottom:10px">'+chips+'</div><div class="empty">'+(items.length?"该状态下暂无订单":"暂无订单")+'</div>'; return; }
+  box.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+chips+'</div>' + filtered.map(b=>{
+    let acts = "";
+    if (isCoach && (b.coachId===undefined || true)){
+      if (b.status==="PENDING") acts='<button class="btn btn-sm btn-green" onclick="bkAct(\''+esc(b.id)+'\',\'accept\')">接单</button>';
+      else if (b.status==="ACCEPTED") acts='<button class="btn btn-sm btn-green" onclick="bkAct(\''+esc(b.id)+'\',\'start\')">开课</button>';
+      else if (b.status==="IN_PROGRESS") acts='<button class="btn btn-sm btn-green" onclick="bkAct(\''+esc(b.id)+'\',\'complete\')">完成</button>';
+      if (["PENDING","ACCEPTED"].includes(b.status)) acts+=' <button class="btn btn-sm" onclick="bkAct(\''+esc(b.id)+'\',\'cancel\')">取消</button>';
+    }
+    return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">' +
+      '<div><b>'+esc(b.id)+'</b> '+statusChip(b.status) +
+      '<div style="font-size:13px;color:var(--muted);margin-top:4px">'+fmtTime(b.startAt)+' ~ '+fmtTime(b.endAt) +
+      ' · 金额 '+fmtMoney(b.amountCents)+'</div></div><div>'+acts+'</div></div>';
+  }).join("");
+}
+function setOrderFilter(f){ orderFilter=f; api("GET","/api/bookings").then(o=>drawOrders(o.items||[])).catch(()=>{}); }
+async function bkAct(id, act){
+  try{
+    await api("POST","/api/bookings/"+id+"/"+act);
+    const orders = await api("GET","/api/bookings");
+    drawOrders(orders.items||[]);
+  }catch(e){ const box=el("orderList"); if(box) box.insertAdjacentHTML("afterbegin", errHtml(e)); }
+}
+/* ---------- 3. agent ---------- */
+const ag = {sessionId:null, history:[]};
+function renderAgent(sec){
+  sec.innerHTML = '<h2>AI 助手</h2><p class="sub">用自然语言预约课程、查询教练与孩子情况</p>' +
+    '<div class="chat" id="chatBox"></div>' +
+    '<div class="chat-input"><input id="chatIn" placeholder="例如：帮小星约一次王教练的篮球课" onkeydown="if(event.key===\'Enter\')sendChat()">' +
+    '<button class="btn btn-green" onclick="sendChat()">发送</button></div>' +
+    '<div class="meta" id="chatMeta"></div>' +
+    '<p style="font-size:12px;color:var(--muted);margin-top:8px">免责声明：AI 回复由大模型生成，仅供参考，预约等关键操作请以实际订单为准。</p>';
+  if (ag.history.length) ag.history.forEach(m=>pushBubble(m.role, m.html, true));
+}
+function pushBubble(role, html, noStore){
+  const box = el("chatBox"); if(!box) return;
+  const d = document.createElement("div");
+  d.className = "msg " + (role==="user"?"user":"ai");
+  d.innerHTML = html;
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
+  if (!noStore) ag.history.push({role, html});
+}
+async function sendChat(msg){
+  const inp = el("chatIn"); const text = msg || (inp&&inp.value||"").trim();
+  if (!text) return;
+  if (inp) inp.value="";
+  pushBubble("user", esc(text));
+  pushBubble("ai", '<span class="spin" style="padding:0">思考中</span>');
+  try{
+    const body = {message:text};
+    if (ag.sessionId) body.sessionId = ag.sessionId;
+    if (ag.childId) body.childId = ag.childId;
+    if (ag.confirmId && /确认|确定/.test(text)) body.confirmationId = ag.confirmId;
+    const d = await api("POST","/api/agent/chat", body);
+    ag.sessionId = d.sessionId;
+    ag.confirmId = d.pendingConfirmation ? d.pendingConfirmation.confirmationId : null;
+    el("chatBox").lastChild.remove();
+    let html = esc(d.reply||"");
+    if (d.pendingConfirmation){
+      html += '<div class="confirm-card"><b>待确认操作：'+esc(d.pendingConfirmation.action)+'</b><div style="margin:6px 0">'+esc(d.pendingConfirmation.summary)+'</div>' +
+        '<button class="btn btn-sm btn-green" onclick="sendChat(\'确认预约\')">确认预约</button></div>';
+    }
+    pushBubble("ai", html);
+    const tc = (d.toolCalls||[]).length;
+    el("chatMeta").textContent = "模型：" + (d.model||"-") + " · 耗时 " + (d.latencyMs||"-") + "ms · 工具调用 " + tc + " 次" + (d.llmMode?" · "+d.llmMode:"");
+  }catch(e){
+    el("chatBox").lastChild.remove();
+    pushBubble("ai", '<span style="color:#B91C1C">'+esc(e.message)+'</span>');
+  }
+}
+/* ---------- 4. feedback ---------- */
+async function renderFeedback(sec){
+  sec.innerHTML = spinTxt("加载课后反馈");
+  try{
+    if (USER.role==="COACH") await feedbackCoach(sec);
+    else await feedbackParent(sec);
+  }catch(e){ sec.innerHTML = errHtml(e); }
+}
+async function feedbackCoach(sec){
+  const d = await api("GET","/api/bookings?status=COMPLETED");
+  const items = d.items||[];
+  const children = (await api("GET","/api/children")).items||[];
+  sec.innerHTML = '<h2>课后反馈（教练）</h2><p class="sub">为已完成的课程填写训练反馈，或给孩子布置课后任务</p>' +
+    '<div class="grid"><div class="card"><h3 style="margin-bottom:8px">填写训练反馈</h3>' +
+    '<label>已完成的课程</label><select id="fbBooking"><option value="">请选择</option>' +
+    items.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.id)+' · '+fmtTime(b.startAt)+'</option>').join("")+'</select>' +
+    '<label>训练内容</label><textarea id="fbContent" rows="3" placeholder="本次训练完成情况、亮点与建议"></textarea>' +
+    '<label>时长（分钟）</label><input id="fbDur" type="number" min="1" value="60">' +
+    '<label>表现备注</label><input id="fbPerf" placeholder="例如：跳绳连续 80 个，姿势标准">' +
+    '<div id="fbErr"></div><button class="btn btn-green" id="fbSubmit" style="margin-top:12px">提交反馈</button></div>' +
+    '<div class="card"><h3 style="margin-bottom:8px">布置课后任务</h3>' +
+    '<label>孩子</label><select id="tkChild"><option value="">请选择</option>' +
+    children.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nickname)+'</option>').join("")+'</select>' +
+    '<label>任务标题</label><input id="tkTitle" placeholder="例如：周末家庭跳绳挑战">' +
+    '<label>目标打卡次数</label><input id="tkGoal" type="number" min="1" value="3">' +
+    '<div id="tkItems"><div class="item-line"><input placeholder="动作名称，如 开合跳"><input class="num" type="number" placeholder="次数"><input class="num" type="number" placeholder="组数"><input class="num" type="number" placeholder="秒"></div></div>' +
+    '<button class="btn btn-sm" onclick="addTkItem()" style="margin-top:6px">+ 添加动作</button>' +
+    '<div id="tkErr"></div><button class="btn btn-green" id="tkSubmit" style="margin-top:12px">布置任务</button></div></div>' +
+    '<h3 class="cat">已完成订单</h3>' +
+    (items.length ? items.map(b=>'<div class="card" style="margin-bottom:10px"><b>'+esc(b.id)+'</b> '+statusChip(b.status)+' <span style="font-size:13px;color:var(--muted)">'+fmtTime(b.startAt)+' · '+fmtMoney(b.amountCents)+'</span></div>').join("") : '<div class="empty">暂无已完成订单</div>');
+  el("fbSubmit").onclick = async () => {
+    el("fbErr").innerHTML="";
+    const bid = el("fbBooking").value;
+    if (!bid || !el("fbContent").value.trim()){ el("fbErr").innerHTML='<div class="err">请选择订单并填写训练内容</div>'; return; }
+    try{
+      await api("POST","/api/training-records",{bookingId:bid, content:el("fbContent").value, durationMinutes:+el("fbDur").value||60, performance:{note:el("fbPerf").value}});
+      el("fbErr").innerHTML='<div class="ok">反馈已提交</div>';
+    }catch(e){ el("fbErr").innerHTML=errHtml(e); }
+  };
+  el("tkSubmit").onclick = async () => {
+    el("tkErr").innerHTML="";
+    const items2 = [...document.querySelectorAll("#tkItems .item-line")].map(l=>{
+      const i = l.querySelectorAll("input");
+      const o = {name:i[0].value.trim()};
+      if (i[1].value) o.reps=+i[1].value;
+      if (i[2].value) o.sets=+i[2].value;
+      if (i[3].value) o.seconds=+i[3].value;
+      return o;
+    }).filter(o=>o.name);
+    if (!el("tkChild").value || !el("tkTitle").value.trim() || !items2.length){ el("tkErr").innerHTML='<div class="err">请填写孩子、标题和至少一个动作</div>'; return; }
+    try{
+      await api("POST","/api/tasks",{childId:el("tkChild").value, title:el("tkTitle").value, items:items2, goalCount:+el("tkGoal").value||1});
+      el("tkErr").innerHTML='<div class="ok">任务已布置</div>';
+    }catch(e){ el("tkErr").innerHTML=errHtml(e); }
+  };
+}
+function addTkItem(){
+  const d = document.createElement("div");
+  d.className = "item-line";
+  d.innerHTML = '<input placeholder="动作名称"><input class="num" type="number" placeholder="次数"><input class="num" type="number" placeholder="组数"><input class="num" type="number" placeholder="秒">';
+  el("tkItems").appendChild(d);
+}
+async function feedbackParent(sec){
+  const children = (await api("GET","/api/children")).items||[];
+  const cid = fbChildId && children.some(c=>c.id===fbChildId) ? fbChildId : (children[0]&&children[0].id||"");
+  sec.innerHTML = '<h2>课后反馈（家长）</h2><p class="sub">查看教练布置的任务并打卡提交，回顾训练反馈</p>' +
+    '<div class="row"><div><label>选择孩子</label><select id="pfChild">'+children.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===cid?" selected":"")+'>'+esc(c.nickname)+'</option>').join("")+'</select></div></div>' +
+    '<div id="pfBody">'+spinTxt("加载任务")+'</div>';
+  el("pfChild").onchange = e => { fbChildId = e.target.value; feedbackParent(sec); };
+  if (!cid){ el("pfBody").innerHTML='<div class="empty">暂无孩子信息</div>'; return; }
+  const [tk, rec] = await Promise.all([
+    api("GET","/api/tasks?childId="+encodeURIComponent(cid)),
+    api("GET","/api/children/"+encodeURIComponent(cid)+"/training-records")]);
+  const tasks = tk.items||[];
+  el("pfBody").innerHTML =
+    '<h3 class="cat">课后任务</h3>' + (tasks.length ? tasks.map(t=>
+      '<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between"><b>'+esc(t.title)+'</b>' +
+      '<span class="chip">'+esc(t.status)+'</span></div>' +
+      '<div style="margin:8px 0;font-size:14px">'+(t.items||[]).map(i=>'<span class="chip">'+esc(i.name)+(i.reps?' ×'+i.reps:'')+(i.sets?' ×'+i.sets+'组':'')+(i.seconds?' '+i.seconds+'s':'')+'</span>').join("")+'</div>' +
+      '<div style="display:flex;gap:8px"><input id="sub_'+esc(t.id)+'" placeholder="打卡内容，例如：今天完成了 3 组">' +
+      '<button class="btn btn-sm btn-green" onclick="submitTask(\''+esc(t.id)+'\')">提交打卡</button></div>' +
+      '<div id="suberr_'+esc(t.id)+'"></div></div>').join("") : '<div class="empty">暂无任务</div>') +
+    '<h3 class="cat">训练反馈记录</h3>' + ((rec.items||[]).length ? (rec.items||[]).map(r=>
+      '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>'+fmtTime(r.createdAt)+'</span><span>'+r.durationMinutes+' 分钟</span></div>' +
+      '<p style="font-size:14px;margin-top:6px">'+esc(r.content)+'</p>' +
+      (r.performance&&r.performance.note?'<p style="font-size:13px;color:var(--muted);margin-top:4px">表现：'+esc(r.performance.note)+'</p>':'')+'</div>').join("") : '<div class="empty">暂无训练反馈记录</div>');
+}
+let fbChildId = "";
+async function submitTask(id){
+  const box = el("suberr_"+id);
+  const input = el("sub_"+id);
+  const content = (input&&input.value||"").trim();
+  if (!content){ box.innerHTML='<div class="err">请填写打卡内容</div>'; return; }
+  try{
+    await api("POST","/api/tasks/"+id+"/submissions",{content});
+    box.innerHTML='<div class="ok">打卡已提交，等待教练确认</div>'; input.value="";
+  }catch(e){ box.innerHTML=errHtml(e); }
+}
+/* ---------- 5. stars ---------- */
+async function renderStars(sec){
+  const children = (await api("GET","/api/children")).items||[];
+  const cid = starChildId && children.some(c=>c.id===starChildId) ? starChildId : (children[0]&&children[0].id||"");
+  sec.innerHTML = '<h2>成长星图</h2><p class="sub">每一颗星星都是一次成长记录</p>' +
+    '<div class="row"><div style="max-width:280px"><label>选择孩子</label><select id="stChild">'+children.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===cid?" selected":"")+'>'+esc(c.nickname)+'</option>').join("")+'</select></div></div>' +
+    '<div id="stBody" style="margin-top:16px">'+spinTxt("加载星图")+'</div>';
+  el("stChild").onchange = e => { starChildId = e.target.value; renderStars(sec); };
+  if (!cid){ el("stBody").innerHTML='<div class="empty">暂无孩子信息</div>'; return; }
+  const d = await api("GET","/api/children/"+encodeURIComponent(cid)+"/stars");
+  const stars = d.stars||[];
+  const cons = d.constellations||[];
+  let html = '<div class="legend" style="margin-bottom:12px">星座：' + (cons.length ? cons.map(c=>'<span class="chip">'+esc(c.name)+' × '+c.count+'</span>').join("") : '<span>暂无</span>') + '</div>';
+  if (!stars.length){
+    html += '<div class="empty" style="color:#9CA3AF">暂无星星 — 完成课程或 AI 陪练训练即可点亮</div>';
+  } else {
+    html += '<div class="star-panel" id="starPanel">';
+    stars.forEach((s,i)=>{
+      const p = (s.metadata&&s.metadata.position)||{x:50,y:50};
+      const color = (s.metadata&&s.metadata.color)||"#FFD866";
+      const size = {1:6,2:9,3:13}[(s.metadata&&s.metadata.stage)] || 8;
+      html += '<div class="star-dot" data-i="'+i+'" style="left:'+p.x+'%;top:'+p.y+'%;width:'+size+'px;height:'+size+'px;background:'+color+';color:'+color+';animation-delay:'+(i%10)*0.3+'s"></div>';
+    });
+    for (const c of cons){
+      const group = stars.filter(s=>s.metadata&&s.metadata.constellation===c.name&&s.metadata.position);
+      for (let i=1;i<group.length;i++){
+        const a=group[i-1].metadata.position, b=group[i].metadata.position;
+        const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx*(window.innerWidth||1120), dy*460);
+        html += '<div class="star-line" style="left:'+a.x+'%;top:'+a.y+'%;width:'+len+'px;transform:rotate('+Math.atan2(dy*460,dx*1120)+'rad)"></div>';
+      }
+    }
+    html += '<div class="star-detail" id="starDetail"></div></div>';
+  }
+  html += '<div id="starRefs">'+spinTxt("加载关联记录")+'</div>';
+  el("stBody").innerHTML = html;
+  el("stBody").querySelectorAll(".star-dot").forEach(d2 => d2.onclick = () => showStarDetail(stars[+d2.dataset.i]));
+  showStarRefs(cid, stars[0]);
+}
+let starChildId = "";
+async function showStarRefs(cid, s){
+  const box = el("starRefs");
+  try{
+    const [rec, ses] = await Promise.all([
+      api("GET","/api/children/"+encodeURIComponent(cid)+"/training-records"),
+      api("GET","/api/training/sessions?childId="+encodeURIComponent(cid))]);
+    const sName = s && s.title || "";
+    box.innerHTML = '<div class="grid"><div class="card"><h3 style="margin-bottom:8px">训练反馈</h3>' +
+      ((rec.items||[]).slice(0,3).map(r=>'<div style="font-size:13px;border-bottom:1px solid var(--border);padding:6px 0">'+fmtTime(r.createdAt)+' · '+esc((r.content||"").slice(0,30))+'</div>').join("")||'<div class="empty">暂无记录</div>')+'</div>' +
+      '<div class="card"><h3 style="margin-bottom:8px">AI 陪练记录'+(sName?'（'+esc(sName)+'相关）':'')+'</h3>' +
+      ((ses.items||[]).slice(0,3).map(x=>'<div style="font-size:13px;border-bottom:1px solid var(--border);padding:6px 0">'+esc(x.exerciseName)+' · '+esc(x.status)+' · 有效'+((x.counters&&x.counters.validRepCount)||0)+'次</div>').join("")||'<div class="empty">暂无记录</div>')+'</div></div>';
+  }catch(e){ box.innerHTML = errHtml(e); }
+}
+function showStarDetail(s){
+  const box = el("starDetail"); if(!box||!s) return;
+  box.innerHTML = '<b>'+esc(s.title)+'</b>' +
+    (s.metadata&&s.metadata.constellation?' <span class="chip">'+esc(s.metadata.constellation)+'</span>':'') +
+    '<p style="color:var(--muted);margin:6px 0">'+esc(s.description)+'</p>' +
+    '<div style="font-size:12px;color:var(--muted)">获得于 '+fmtTime(s.earnedAt)+' · 来源 '+esc(s.sourceType)+'</div>' +
+    '<button class="btn btn-sm" style="margin-top:10px" onclick="el(\'starDetail\').classList.remove(\'show\')">关闭</button>';
+  box.classList.add("show");
+}
+/* ---------- 6. exercises ---------- */
+async function renderExercises(sec){
+  sec.innerHTML = spinTxt("加载动作库");
+  const d = await api("GET","/api/exercises");
+  let motionIds = [];
+  try{ const m = await api("GET","/api/training/exercises"); motionIds = (m.items||[]).map(x=>x.exerciseId); motionExercises = motionIds; }catch(e){}
+  const items = d.items||[];
+  const cats = [...new Set(items.map(x=>x.category||"其他"))];
+  sec.innerHTML = '<h2>动作库</h2><p class="sub">标准动作讲解与安全提示，配置了姿态识别的动作可直接开始 AI 陪练</p>' +
+    cats.map(cat =>
+      '<h3 class="cat">'+esc(cat)+'</h3><div class="grid">' +
+      items.filter(x=>(x.category||"其他")===cat).map(x=>{
+        const motion = motionIds.includes(x.exerciseId);
+        return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(x.name)+'</b>' +
+          '<span class="chip">'+esc(x.trainingGoal||"")+'</span></div>' +
+          '<div style="margin:6px 0">'+(x.tags||[]).map(t=>'<span class="chip">'+esc(t)+'</span>').join("")+'</div>' +
+          (x.instructions&&x.instructions.length?'<ol style="font-size:13px;color:var(--muted);padding-left:18px">'+x.instructions.slice(0,2).map(i=>'<li>'+esc(i)+'</li>').join("")+'</ol>':'') +
+          (x.commonMistakes&&x.commonMistakes.length?'<p style="font-size:13px;color:#B45309;margin-top:6px">易错：'+esc(x.commonMistakes[0])+'</p>':'') +
+          (x.safetyNotes?'<p style="font-size:13px;color:var(--muted);margin-top:4px">安全：'+esc(x.safetyNotes)+'</p>':'') +
+          '<div style="margin-top:10px">' +
+          (motion?'<a class="btn btn-sm btn-green" href="/motion-coach?exercise='+encodeURIComponent(x.exerciseId)+'">开始训练</a>'
+                 :'<span class="tag-gray">姿态识别未配置</span>') +
+          (x.model3dUrl?' <a class="btn btn-sm" href="'+esc(x.model3dUrl)+'" target="_blank">3D 演示</a>':' <span class="tag-gray">3D 演示未配置</span>') +
+          '</div></div>';
+      }).join("")+'</div>').join("");
+}
+/* ---------- boot ---------- */
+(async () => {
+  // Restore session: token alone is not enough — USER must be populated
+  // before the first route() render, or role-specific views render wrong
+  // and get cached by `loaded`.
+  if (localStorage.getItem("sl_token")) {
+    TOKEN = localStorage.getItem("sl_token");
+    try {
+      const me = await api("GET", "/api/auth/me");
+      USER = me.user;
+    } catch (e) {
+      localStorage.removeItem("sl_token"); TOKEN = ""; USER = null;
+    }
+  }
+  renderNav();
+  route();
+})();
+</script>
+</body>
+</html>
